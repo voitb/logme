@@ -1,12 +1,18 @@
 import { defineConfig } from "vite";
+import path from "path";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
 	plugins: [react()],
+	resolve: {
+		alias: {
+			"@": path.resolve(__dirname, "./src"),
+		},
+	},
 	build: {
 		lib: {
 			entry: "src/index.ts",
-			name: "Logme",
+			name: "LogMe",
 			formats: ["es", "cjs"],
 			fileName: (format) => `log-me.${format}.js`,
 		},
@@ -16,6 +22,7 @@ export default defineConfig({
 				globals: {
 					react: "React",
 					"react-dom": "ReactDOM",
+					axios: "axios",
 				},
 			},
 		},
