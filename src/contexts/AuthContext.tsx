@@ -10,7 +10,7 @@ interface AuthProviderProps {
 	onLoginError?: (error: Error) => void;
 }
 
-interface AuthContextType {
+export interface AuthContextType {
 	user: User | null;
 	isLoggedIn: boolean;
 	login: (username: string, password: string) => Promise<void>;

@@ -1,10 +1,61 @@
 var Ln = Object.defineProperty;
 var $n = (t, e, r) => e in t ? Ln(t, e, { enumerable: !0, configurable: !0, writable: !0, value: r }) : t[e] = r;
 var _t = (t, e, r) => $n(t, typeof e != "symbol" ? e + "" : e, r);
+import zn from "axios";
 import * as J from "react";
-import H, { createContext as zn, useState as vs, useEffect as Un, useContext as Wn } from "react";
-import Bn from "axios";
+import H, { createContext as Un, useState as vs, useEffect as Wn, useContext as Bn } from "react";
 import "react-dom";
+const ot = class ot {
+  constructor(e) {
+    _t(this, "user", null);
+    _t(this, "isLoggedIn", !1);
+    _t(this, "listeners", []);
+    _t(this, "apiEndpoint");
+    this.apiEndpoint = e, console.log(`AuthManager initialized with endpoint: ${e}`);
+  }
+  static getInstance(e) {
+    if (!ot.instance) {
+      if (!e)
+        throw new Error(
+          "AuthManager nie został zainicjalizowany. Przekaż apiEndpoint przy pierwszym wywołaniu."
+        );
+      ot.instance = new ot(e), console.log("AuthManager instance created.");
+    }
+    return ot.instance;
+  }
+  async login(e, r) {
+    console.log(`Attempting to log in with username: ${e}`);
+    try {
+      const s = await zn.post(`${this.apiEndpoint}/login`, {
+        username: e,
+        password: r
+      });
+      this.user = s.data.user, this.isLoggedIn = !0, this.notifyListeners(), console.log(`Login successful for user: ${e}`);
+    } catch (s) {
+      throw console.error(`Login failed for user: ${e}`, s), s;
+    }
+  }
+  logout() {
+    console.log(`Logging out user: ${this.user}`), this.user = null, this.isLoggedIn = !1, this.notifyListeners(), console.log("Logout successful.");
+  }
+  getUser() {
+    return console.log(`Getting user: ${this.user}`), this.user;
+  }
+  isUserLoggedIn() {
+    return console.log(`Is user logged in: ${this.isLoggedIn}`), this.isLoggedIn;
+  }
+  subscribe(e) {
+    this.listeners.push(e), console.log("Listener subscribed.");
+  }
+  unsubscribe(e) {
+    this.listeners = this.listeners.filter((r) => r !== e), console.log("Listener unsubscribed.");
+  }
+  notifyListeners() {
+    console.log("Notifying listeners."), this.listeners.forEach((e) => e(this.isLoggedIn, this.user));
+  }
+};
+_t(ot, "instance");
+let Ke = ot;
 var Wr = { exports: {} }, Nt = {};
 /**
  * @license React
@@ -635,65 +686,14 @@ React keys must be passed directly to JSX without using spread:
 }
 process.env.NODE_ENV === "production" ? Wr.exports = Gn() : Wr.exports = qn();
 var Z = Wr.exports;
-const ot = class ot {
-  constructor(e) {
-    _t(this, "user", null);
-    _t(this, "isLoggedIn", !1);
-    _t(this, "listeners", []);
-    _t(this, "apiEndpoint");
-    this.apiEndpoint = e, console.log(`AuthManager initialized with endpoint: ${e}`);
-  }
-  static getInstance(e) {
-    if (!ot.instance) {
-      if (!e)
-        throw new Error(
-          "AuthManager nie został zainicjalizowany. Przekaż apiEndpoint przy pierwszym wywołaniu."
-        );
-      ot.instance = new ot(e), console.log("AuthManager instance created.");
-    }
-    return ot.instance;
-  }
-  async login(e, r) {
-    console.log(`Attempting to log in with username: ${e}`);
-    try {
-      const s = await Bn.post(`${this.apiEndpoint}/login`, {
-        username: e,
-        password: r
-      });
-      this.user = s.data.user, this.isLoggedIn = !0, this.notifyListeners(), console.log(`Login successful for user: ${e}`);
-    } catch (s) {
-      throw console.error(`Login failed for user: ${e}`, s), s;
-    }
-  }
-  logout() {
-    console.log(`Logging out user: ${this.user}`), this.user = null, this.isLoggedIn = !1, this.notifyListeners(), console.log("Logout successful.");
-  }
-  getUser() {
-    return console.log(`Getting user: ${this.user}`), this.user;
-  }
-  isUserLoggedIn() {
-    return console.log(`Is user logged in: ${this.isLoggedIn}`), this.isLoggedIn;
-  }
-  subscribe(e) {
-    this.listeners.push(e), console.log("Listener subscribed.");
-  }
-  unsubscribe(e) {
-    this.listeners = this.listeners.filter((r) => r !== e), console.log("Listener unsubscribed.");
-  }
-  notifyListeners() {
-    console.log("Notifying listeners."), this.listeners.forEach((e) => e(this.isLoggedIn, this.user));
-  }
-};
-_t(ot, "instance");
-let Ke = ot;
-const Zs = zn(null), vo = ({
+const Zs = Un(null), vo = ({
   children: t,
   apiEndpoint: e,
   onLoginSuccess: r,
   onLoginError: s
 }) => {
   const [n, a] = vs(null), [i, o] = vs(!1);
-  Un(() => {
+  Wn(() => {
     Ke.getInstance(e);
     const h = (y, j) => {
       o(y), a(j);
@@ -713,7 +713,7 @@ const Zs = zn(null), vo = ({
   };
   return /* @__PURE__ */ Z.jsx(Zs.Provider, { value: { user: n, isLoggedIn: i, login: d, logout: f }, children: t });
 }, Ms = () => {
-  const t = Wn(Zs);
+  const t = Bn(Zs);
   if (!t)
     throw new Error("useAuth musi być użyty wewnątrz AuthProvider");
   return t;

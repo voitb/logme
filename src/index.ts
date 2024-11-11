@@ -1,10 +1,13 @@
-import { AuthProvider } from "@/contexts/AuthContext";
-import { useAuth } from "@/hooks/useAuth";
-import LoginPage from "@/components/LoginPage";
-import LoginStatus from "@/components/LoginStatus";
-import AuthManager from "@/core/AuthManager";
+// src/index.ts
 
-import "./index.css";
+// Export core library
+export { default as AuthManager } from "./core/AuthManager";
 
-export * from "@/core/types";
-export { AuthProvider, useAuth, LoginPage, LoginStatus, AuthManager };
+// Export types
+export * from "./core/types";
+
+// Export React integration
+export { AuthProvider } from "./contexts/AuthContext";
+export { useAuth } from "./hooks/useAuth";
+export { default as LoginPage } from "./components/LoginPage";
+export { default as LoginStatus } from "./components/LoginStatus";
