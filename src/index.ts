@@ -1,4 +1,5 @@
-// src/index.ts
+// import styles
+import "./index.css";
 
 // Export core library
 export { default as AuthManager } from "./core/AuthManager";
