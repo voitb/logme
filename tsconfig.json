@@ -5,9 +5,22 @@
 		{ "path": "./tsconfig.node.json" }
 	],
 	"compilerOptions": {
+		"outDir": "dist",
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleResolution": "Node",
+		"declaration": true,
+		"declarationMap": true,
+		"emitDeclarationOnly": false,
+		"jsx": "react-jsx",
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"sourceMap": true,
 		"baseUrl": ".",
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"*": ["src/*"]
 		}
 	}
 }
