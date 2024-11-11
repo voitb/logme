@@ -3,8 +3,8 @@
 	"private": true,
 	"version": "0.0.0",
 	"type": "module",
-	"main": "dist/my-library.cjs.js",
-	"module": "dist/my-library.es.js",
+	"main": "dist/log-me.cjs.js",
+	"module": "dist/log-me.es.js",
 	"types": "dist/index.d.ts",
 	"files": [
 		"dist"
