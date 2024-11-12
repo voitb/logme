@@ -32,7 +32,7 @@ const RegisterForm = () => {
 
 	return (
 		<Form {...form}>
-			<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+			<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-7">
 				{form.formState.errors.root && (
 					<div className="text-red-500 text-sm">
 						{form.formState.errors.root.message}
