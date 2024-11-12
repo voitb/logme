@@ -1,14 +1,30 @@
-import { AuthProvider, LoginPage, LoginStatus } from "./index";
+import { AuthProvider, LoginPage, LoginStatus, RegisterPage } from "./index";
 import "./index.css";
 
 function App() {
+	const showLoginPage = () => {
+		if (window.location.pathname === "/login") {
+			return <LoginPage />;
+		}
+	};
+
+	const showRegister = () => {
+		if (window.location.pathname === "/register") {
+			return <RegisterPage />;
+		}
+	};
+
+	const showLoginStatus = () => {
+		if (window.location.pathname === "/status") {
+			return <LoginStatus />;
+		}
+	};
+
 	return (
 		<AuthProvider apiEndpoint="https://api.twoja-domena.com">
-			<div className="max-w-md mx-auto mt-10 space-y-6">
-				<h1 className="text-2xl font-bold text-center">Demo Biblioteki</h1>
-				<LoginStatus />
-				<LoginPage />
-			</div>
+			{showLoginPage()}
+			{showRegister()}
+			{showLoginStatus()}
 		</AuthProvider>
 	);
 }

@@ -1,7 +1,7 @@
 // src/react/contexts/AuthContext.tsx
 import React, { createContext, useEffect, useState } from "react";
-import AuthManager from "@/core/AuthManager";
-import { User } from "@/core/types";
+import AuthManager from "@/core/auth/AuthManager";
+import { User } from "@/types";
 
 interface AuthProviderProps {
 	children: React.ReactNode;
@@ -14,6 +14,7 @@ export interface AuthContextType {
 	user: User | null;
 	isLoggedIn: boolean;
 	login: (username: string, password: string) => Promise<void>;
+	register: (username: string, password: string) => Promise<void>;
 	logout: () => void;
 }
 
@@ -54,12 +55,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 		}
 	};
 
+	const register = async (username: string, password: string) => {
+		// const newUser = await AuthManager.getInstance().register(
+		// 	username,
+		// 	password
+		// );
+		// setUser(newUser);
+	};
+
 	const logout = () => {
 		AuthManager.getInstance().logout();
 	};
 
 	return (
-		<AuthContext.Provider value={{ user, isLoggedIn, login, logout }}>
+		<AuthContext.Provider value={{ user, isLoggedIn, login, logout, register }}>
 			{children}
 		</AuthContext.Provider>
 	);

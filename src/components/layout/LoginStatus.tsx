@@ -1,6 +1,6 @@
 import React from "react";
-import { useAuth } from "../hooks/useAuth";
-import { Button } from "./ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 
 const LoginStatus: React.FC = () => {
 	const { isLoggedIn, user, logout } = useAuth();

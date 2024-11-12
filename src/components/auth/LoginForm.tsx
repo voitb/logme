@@ -1,4 +1,4 @@
-// src/react/components/LoginComponent.tsx
+// src/react/components/LoginForm.tsx
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,11 +11,11 @@ import {
 	FormItem,
 	FormLabel,
 	FormMessage,
-} from "./ui/form";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
+} from "../ui/form";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 
-const LoginPage: React.FC = () => {
+const LoginForm = () => {
 	const { login } = useAuth();
 	const form = useForm<LoginFormData>({
 		resolver: zodResolver(loginSchema),
@@ -25,18 +25,20 @@ const LoginPage: React.FC = () => {
 		try {
 			await login(data.username, data.password);
 		} catch (err) {
-			console.log(err);
+			console.error(err);
 			form.setError("root", {
-				message: "Nie udało się zalogować. Sprawdź swoje dane.",
+				message: "Failed to log in. Please check your credentials.",
 			});
 		}
 	};
 
+	console.log(form);
+
 	return (
 		<Form {...form}>
-			<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+			<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
 				{form.formState.errors.root && (
-					<div className="text-red-500">
+					<div className="text-red-500 text-sm">
 						{form.formState.errors.root.message}
 					</div>
 				)}
@@ -45,11 +47,15 @@ const LoginPage: React.FC = () => {
 					control={form.control}
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel>Nazwa użytkownika</FormLabel>
+							<FormLabel>Username</FormLabel>
 							<FormControl>
-								<Input placeholder="Wprowadź nazwę użytkownika" {...field} />
+								<Input
+									placeholder="Enter your username"
+									className="!mt-1"
+									{...field}
+								/>
 							</FormControl>
-							<FormMessage />
+							<FormMessage className="absolute text-[11px] !mt-1" />
 						</FormItem>
 					)}
 				/>
@@ -58,24 +64,27 @@ const LoginPage: React.FC = () => {
 					control={form.control}
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel>Hasło</FormLabel>
+							<FormLabel>Password</FormLabel>
 							<FormControl>
 								<Input
 									type="password"
-									placeholder="Wprowadź hasło"
+									placeholder="Enter your password"
+									className="!mt-1"
 									{...field}
 								/>
 							</FormControl>
-							<FormMessage />
+							<FormMessage className="absolute text-[11px] !mt-1">
+								{form.formState.errors.username?.message}
+							</FormMessage>
 						</FormItem>
 					)}
 				/>
-				<Button type="submit" className="w-full">
-					Zaloguj się
+				<Button type="submit" className="w-full !mt-10">
+					Log in
 				</Button>
 			</form>
 		</Form>
 	);
 };
 
-export default LoginPage;
+export default LoginForm;

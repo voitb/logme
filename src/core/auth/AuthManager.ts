@@ -1,5 +1,5 @@
 import axios from "axios";
-import { User, AuthListener } from "./types";
+import { User, AuthListener } from "../../types/auth.types";
 
 class AuthManager {
 	private static instance: AuthManager;
@@ -41,6 +41,11 @@ class AuthManager {
 			console.error(`Login failed for user: ${username}`, error);
 			throw error;
 		}
+	}
+
+	public async register(username: string, password: string) {
+		// Implement registration logic with API
+		console.log(`Registering user: ${username} ${password}`);
 	}
 
 	public logout(): void {
