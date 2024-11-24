@@ -11,6 +11,7 @@ interface Props {
 
 const RegisterPage = (props: Props) => {
 	const { title, description } = props;
+
 	return (
 		<LoginWrapper>
 			<AuthCard

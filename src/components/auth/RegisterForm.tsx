@@ -12,6 +12,7 @@ import {
 } from "../ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { account, ID } from "../../lib/appwrite";
 
 const RegisterForm = () => {
 	const { register: registerUser } = useAuth();
@@ -19,9 +20,13 @@ const RegisterForm = () => {
 		resolver: zodResolver(registerSchema),
 	});
 
+	async function register(email: string, password: string) {
+		await account.create(ID.unique(), email, password);
+	}
+
 	const onSubmit = async (data: RegisterFormData) => {
 		try {
-			await registerUser(data.username, data.password);
+			await register(data.username, data.password);
 		} catch (err) {
 			console.log(err);
 			form.setError("root", {

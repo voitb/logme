@@ -3,6 +3,7 @@ import AuthCard from "@/components/auth/AuthCard";
 import LoginForm from "@/components/auth/LoginForm";
 import LoginWrapper from "@/components/layout/LoginWrapper";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
+import { account, ID } from "../lib/appwrite";
 
 interface Props {
 	title?: string;
@@ -11,6 +12,7 @@ interface Props {
 
 const LoginPage = (props: Props) => {
 	const { title, description } = props;
+	console.log(account, ID);
 	return (
 		<LoginWrapper>
 			<AuthCard

@@ -1,9 +1,43 @@
 export interface User {
 	id: string;
-	name: string;
 	email: string;
-	createdAt: string;
-	updatedAt: string;
+	username?: string;
+	emailVerified?: boolean;
+	createdAt?: string;
+	updatedAt?: string;
 }
 
 export type AuthListener = (isLoggedIn: boolean, user: User | null) => void;
+
+export interface AuthProvider {
+	login(email: string, password: string): Promise<void>;
+	register(userDetails: RegisterDetails): Promise<void>;
+	logout(): Promise<void>;
+	getUser(): User | null;
+	isUserLoggedIn(): boolean;
+	subscribe(listener: AuthListener): void;
+	unsubscribe(listener: AuthListener): void;
+	resetPassword(email: string): Promise<void>;
+	updateProfile(profileDetails: ProfileDetails): Promise<void>;
+	sendEmailVerification(): Promise<void>;
+	isEmailVerified(): Promise<boolean>;
+}
+
+export interface RegisterDetails {
+	email: string;
+	password: string;
+	username?: string;
+}
+
+export interface ProfileDetails {
+	email?: string;
+	password?: string;
+	username?: string;
+	[key: string]: any;
+}
+
+export interface RegisterDetails {
+	email: string;
+	password: string;
+	username?: string;
+}
