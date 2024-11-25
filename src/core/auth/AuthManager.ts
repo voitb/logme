@@ -44,6 +44,9 @@ class AuthManager {
 	public async resetPassword(email: string): Promise<void> {
 		return this.authProvider.resetPassword(email);
 	}
+	public async forgotPassword(email: string): Promise<void> {
+		return this.authProvider.forgotPassword(email);
+	}
 
 	public async updateProfile(profileDetails: ProfileDetails): Promise<void> {
 		return this.authProvider.updateProfile(profileDetails);

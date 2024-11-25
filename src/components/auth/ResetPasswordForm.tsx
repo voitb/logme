@@ -1,9 +1,11 @@
-// src/react/components/LoginForm.tsx
+// src/react/components/ResetPasswordForm.tsx
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LoginFormData, loginSchema } from "@/schemas/authSchemas";
-import { useAuth } from "@/hooks/useAuth";
+import {
+	ResetPasswordFormData,
+	resetPasswordSchema,
+} from "@/schemas/authSchemas";
 import {
 	Form,
 	FormControl,
@@ -15,21 +17,25 @@ import {
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 
-const LoginForm = () => {
-	const { login } = useAuth();
-	const form = useForm<LoginFormData>({
-		resolver: zodResolver(loginSchema),
+const ResetPasswordForm = () => {
+	const form = useForm<ResetPasswordFormData>({
+		resolver: zodResolver(resetPasswordSchema),
 	});
 
-	const onSubmit = async (data: LoginFormData) => {
+	const onSubmit = async (data: ResetPasswordFormData) => {
 		try {
-			console.log("submit");
-			await login(data.email, data.password);
+			console.log("Password Reset Data:", data);
+			// Call the API to reset the password
+			// Example: await resetPasswordAPI(data.password);
+			form.reset();
+			form.setError("root", {
+				message: "Your password has been reset successfully.",
+				type: "success",
+			});
 		} catch (err) {
-			console.log("submit");
 			console.error(err);
 			form.setError("root", {
-				message: "Failed to log in. Please check your credentials.",
+				message: "Failed to reset password. Please try again later.",
 			});
 		}
 	};
@@ -38,19 +44,26 @@ const LoginForm = () => {
 		<Form {...form}>
 			<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-7">
 				{form.formState.errors.root && (
-					<div className="text-red-500 text-sm">
+					<div
+						className={`text-sm ${
+							form.formState.errors.root.type === "success"
+								? "text-green-500"
+								: "text-red-500"
+						}`}
+					>
 						{form.formState.errors.root.message}
 					</div>
 				)}
 				<FormField
-					name="email"
+					name="password"
 					control={form.control}
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel>Username</FormLabel>
+							<FormLabel>New Password</FormLabel>
 							<FormControl>
 								<Input
-									placeholder="Enter your username"
+									type="password"
+									placeholder="Enter your new password"
 									className="!mt-1"
 									{...field}
 								/>
@@ -60,31 +73,29 @@ const LoginForm = () => {
 					)}
 				/>
 				<FormField
-					name="password"
+					name="confirmPassword"
 					control={form.control}
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel>Password</FormLabel>
+							<FormLabel>Confirm Password</FormLabel>
 							<FormControl>
 								<Input
 									type="password"
-									placeholder="Enter your password"
+									placeholder="Confirm your new password"
 									className="!mt-1"
 									{...field}
 								/>
 							</FormControl>
-							<FormMessage className="absolute text-[11px] !mt-1">
-								{form.formState.errors.username?.message}
-							</FormMessage>
+							<FormMessage className="absolute text-[11px] !mt-1" />
 						</FormItem>
 					)}
 				/>
 				<Button type="submit" className="w-full !mt-10">
-					Log in
+					Reset Password
 				</Button>
 			</form>
 		</Form>
 	);
 };
 
-export default LoginForm;
+export default ResetPasswordForm;

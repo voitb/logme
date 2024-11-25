@@ -33,7 +33,8 @@ export interface AuthContextType {
 		username?: string
 	) => Promise<void>;
 	logout: () => Promise<void>;
-	resetPassword: (email: string) => Promise<void>;
+	resetPassword: (password: string) => Promise<void>;
+	forgotPassword: (email: string) => Promise<void>;
 	updateProfile: (profileDetails: ProfileDetails) => Promise<void>;
 	sendEmailVerification: () => Promise<void>;
 	isEmailVerified: () => Promise<boolean>;
@@ -66,10 +67,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 		onUpdateProfileError,
 		onSendEmailVerificationSuccess,
 		onSendEmailVerificationError,
+		onForgotPasswordSuccess,
+		onForgotPasswordError,
 	} = useAuthMethods(methods);
 
 	useEffect(() => {
 		const listener = (loggedIn: boolean, user: User | null) => {
+			if (!loggedIn) window.location.reload();
 			setIsLoggedIn(loggedIn);
 			setUser(user);
 		};
@@ -120,6 +124,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 			throw error;
 		}
 	};
+	const forgotPassword = async (email: string) => {
+		try {
+			await authManager.forgotPassword(email);
+			onForgotPasswordSuccess();
+		} catch (error) {
+			onForgotPasswordError(error as Error);
+			throw error;
+		}
+	};
 
 	const updateProfile = async (profileDetails: ProfileDetails) => {
 		try {
@@ -158,6 +171,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 				updateProfile,
 				sendEmailVerification,
 				isEmailVerified,
+				forgotPassword,
 			}}
 		>
 			{children}

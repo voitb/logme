@@ -6,6 +6,7 @@ import {
 	AuthProvider,
 	ProfileDetails,
 	RegisterDetails,
+	RawUser,
 } from "../../types/auth.types";
 import Cookies from "js-cookie";
 
@@ -16,52 +17,50 @@ class AppwriteAuthProvider implements AuthProvider {
 
 	constructor() {
 		this.loadUserFromCookies();
-		this.checkCurrentSession();
-	}
-
-	private async checkCurrentSession() {
-		try {
-			const currentUser = await account.get();
-			this.setUserFromAccount(currentUser);
-		} catch {
-			this.user = null;
-			this.isLoggedIn = false;
-		}
 	}
 
 	private loadUserFromCookies() {
 		const userCookie = Cookies.get("auth_user");
 		if (userCookie) {
-			this.user = JSON.parse(userCookie);
-			this.isLoggedIn = true;
+			this.setUserFromAccount(JSON.parse(userCookie));
 		} else {
 			this.user = null;
 			this.isLoggedIn = false;
 		}
 	}
 
-	private setUserFromAccount(currentUser: any) {
-		this.user = {
-			id: currentUser.$id,
-			email: currentUser.email,
-			username: currentUser.name,
-			emailVerified: currentUser.emailVerification,
+	private convertUser = (user: RawUser) => {
+		return {
+			id: user.$id,
+			email: user.email,
+			username: user.name,
 		};
+	};
+
+	private setUserFromAccount(currentUser: RawUser) {
+		this.user = this.convertUser(currentUser);
 		this.isLoggedIn = true;
+	}
+
+	private setCookie(user: RawUser) {
+		this.convertUser(user);
 		Cookies.set("auth_user", JSON.stringify(this.user), { expires: 7 });
 		this.notifyListeners();
 	}
 
 	async login(email: string, password: string): Promise<void> {
-		await account.createSession(email, password);
+		await account.createEmailPasswordSession(email, password);
 		const currentUser = await account.get();
 		this.setUserFromAccount(currentUser);
+		this.setCookie(currentUser);
 	}
 
 	async register(userDetails: RegisterDetails): Promise<void> {
 		const { email, password, username } = userDetails;
 		await account.create(ID.unique(), email, password, username);
-		await this.sendEmailVerification();
+		const currentUser = await account.get();
+		this.setUserFromAccount(currentUser);
+		this.setCookie(currentUser);
 	}
 
 	async logout(): Promise<void> {
@@ -92,36 +91,16 @@ class AppwriteAuthProvider implements AuthProvider {
 		this.listeners.forEach((listener) => listener(this.isLoggedIn, this.user));
 	}
 
-	async resetPassword(email: string): Promise<void> {
-		const redirectUrl = "https://your-app.com/reset-password";
-		await account.createRecovery(email, redirectUrl);
-	}
+	async resetPassword(email: string): Promise<void> {}
 
-	async updateProfile(profileDetails: ProfileDetails): Promise<void> {
-		if (profileDetails.email) {
-			await account.updateEmail(
-				profileDetails.email,
-				profileDetails.password as string
-			);
-		}
-		if (profileDetails.password) {
-			await account.updatePassword(profileDetails.password);
-		}
-		if (profileDetails.username) {
-			await account.updateName(profileDetails.username);
-		}
-		const currentUser = await account.get();
-		this.setUserFromAccount(currentUser);
-	}
+	async updateProfile(profileDetails: ProfileDetails): Promise<void> {}
 
-	async sendEmailVerification(): Promise<void> {
-		const redirectUrl = "https://your-app.com/verify-email";
-		await account.createVerification(redirectUrl);
-	}
+	async sendEmailVerification(): Promise<void> {}
 
 	async isEmailVerified(): Promise<boolean> {
-		const currentUser = await account.get();
-		return currentUser.emailVerification;
+		// const currentUser = await account.get();
+		// return currentUser.emailVerification;
+		return false;
 	}
 }
 

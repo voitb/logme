@@ -12,34 +12,31 @@ import {
 } from "../ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { account, ID } from "../../lib/appwrite";
+import { toast } from "../../hooks/use-toast";
 
 const RegisterForm = () => {
-	const { register: registerUser } = useAuth();
+	const { register } = useAuth();
 	const form = useForm<RegisterFormData>({
 		resolver: zodResolver(registerSchema),
 	});
 
-	async function register(email: string, password: string) {
-		await account.create(ID.unique(), email, password);
-	}
-
 	const onSubmit = async (data: RegisterFormData) => {
 		try {
-			await register(data.username, data.password);
+			await register(data.email, data.password, data.username);
 		} catch (err) {
-			console.log(err);
+			const description = (err as any).message as string;
+			toast({ title: "Register error", description });
 			form.setError("root", {
-				message: "Failed to register. Please try again.",
+				message: description,
 			});
 		}
 	};
 
 	return (
 		<Form {...form}>
-			<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-7">
+			<form onSubmit={form.handleSubmit(onSubmit)} className="">
 				{form.formState.errors.root && (
-					<div className="text-red-500 text-sm">
+					<div className="text-red-500 text-sm mb-2">
 						{form.formState.errors.root.message}
 					</div>
 				)}
@@ -47,7 +44,7 @@ const RegisterForm = () => {
 					name="username"
 					control={form.control}
 					render={({ field }) => (
-						<FormItem>
+						<FormItem className="mb-6">
 							<FormLabel>Username</FormLabel>
 							<FormControl>
 								<Input
@@ -61,10 +58,27 @@ const RegisterForm = () => {
 					)}
 				/>
 				<FormField
+					name="email"
+					control={form.control}
+					render={({ field }) => (
+						<FormItem className="mb-6">
+							<FormLabel>Email</FormLabel>
+							<FormControl>
+								<Input
+									placeholder="Enter your email"
+									className="!mt-1"
+									{...field}
+								/>
+							</FormControl>
+							<FormMessage className="absolute text-[11px] !mt-1" />
+						</FormItem>
+					)}
+				/>
+				<FormField
 					name="password"
 					control={form.control}
 					render={({ field }) => (
-						<FormItem>
+						<FormItem className="mb-6">
 							<FormLabel>Password</FormLabel>
 							<FormControl>
 								<Input
@@ -82,7 +96,7 @@ const RegisterForm = () => {
 					name="confirmPassword"
 					control={form.control}
 					render={({ field }) => (
-						<FormItem>
+						<FormItem className="mb-6">
 							<FormLabel>Confirm Password</FormLabel>
 							<FormControl>
 								<Input
@@ -96,7 +110,7 @@ const RegisterForm = () => {
 						</FormItem>
 					)}
 				/>
-				<Button type="submit" className="w-full !mt-10">
+				<Button type="submit" className="w-full !mt-4">
 					Register
 				</Button>
 			</form>

@@ -19,7 +19,7 @@ const AuthCard: React.FC<AuthCardProps> = ({
 	children,
 }) => (
 	<Card className="w-[350px]">
-		<CardHeader>
+		<CardHeader className="pb-3">
 			<CardTitle className="text-2xl">{title}</CardTitle>
 			<CardDescription>{description}</CardDescription>
 		</CardHeader>

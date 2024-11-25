@@ -26,6 +26,14 @@ const RegisterPage = (props: Props) => {
 						<Separator className="!flex-shrink" />
 					</div>
 					<SocialLoginButtons />
+					<div className="flex justify-center">
+						<span className="px-2 text-sm text-gray-500">
+							Already have an account?{" "}
+							<a className="text-blue-400" href="/login">
+								Log in
+							</a>
+						</span>
+					</div>
 				</div>
 			</AuthCard>
 		</LoginWrapper>

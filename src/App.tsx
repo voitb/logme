@@ -1,4 +1,12 @@
-import { AuthProvider, LoginPage, LoginStatus, RegisterPage } from "./index";
+import LoginHandler from "./components/layout/LoginHandler";
+import {
+	AuthProvider,
+	LoginPage,
+	LoginStatus,
+	RegisterPage,
+	ForgotPasswordPage,
+	ResetPasswordPage,
+} from "./index";
 import "./index.css";
 
 function App() {
@@ -20,11 +28,27 @@ function App() {
 		}
 	};
 
+	const showForgotPassword = () => {
+		if (window.location.pathname === "/forgot-password") {
+			return <ForgotPasswordPage />;
+		}
+	};
+
+	const showResetPassword = () => {
+		if (window.location.pathname === "/reset-password") {
+			return <ResetPasswordPage />;
+		}
+	};
+
 	return (
-		<AuthProvider apiEndpoint="https://api.twoja-domena.com">
-			{showLoginPage()}
-			{showRegister()}
-			{showLoginStatus()}
+		<AuthProvider>
+			<LoginHandler>
+				{showLoginPage()}
+				{showRegister()}
+				{showLoginStatus()}
+				{showResetPassword()}
+				{showForgotPassword()}
+			</LoginHandler>
 		</AuthProvider>
 	);
 }
