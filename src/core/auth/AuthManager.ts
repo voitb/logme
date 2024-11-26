@@ -29,6 +29,10 @@ class AuthManager {
 		return this.authProvider.getUser();
 	}
 
+	public getInitialized(): boolean {
+		return this.authProvider.getInitialized();
+	}
+
 	public isUserLoggedIn(): boolean {
 		return this.authProvider.isUserLoggedIn();
 	}
@@ -54,6 +58,13 @@ class AuthManager {
 
 	public async sendEmailVerification(): Promise<void> {
 		return this.authProvider.sendEmailVerification();
+	}
+
+	public async sendConfirmVerification(
+		userId: string,
+		secret: string
+	): Promise<void> {
+		return this.authProvider.sendConfirmVerification(userId, secret);
 	}
 
 	public async isEmailVerified(): Promise<boolean> {

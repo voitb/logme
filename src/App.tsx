@@ -1,3 +1,6 @@
+import UserCard from "./components/auth/UserCard";
+import VerificationCard from "./components/auth/VerificationCard";
+import VerificationComplete from "./components/auth/VerificationComplete";
 import LoginHandler from "./components/layout/LoginHandler";
 import {
 	AuthProvider,
@@ -40,6 +43,22 @@ function App() {
 		}
 	};
 
+	const showUserCard = () => {
+		if (window.location.pathname === "/") {
+			return <UserCard />;
+		}
+	};
+	const showVerificationCard = () => {
+		if (window.location.pathname === "/verify") {
+			return <VerificationCard />;
+		}
+	};
+	const showVerificationAcceptCard = () => {
+		if (window.location.pathname === "/verification-complete") {
+			return <VerificationComplete />;
+		}
+	};
+
 	return (
 		<AuthProvider>
 			<LoginHandler>
@@ -48,6 +67,9 @@ function App() {
 				{showLoginStatus()}
 				{showResetPassword()}
 				{showForgotPassword()}
+				{showUserCard()}
+				{showVerificationCard()}
+				{showVerificationAcceptCard()}
 			</LoginHandler>
 		</AuthProvider>
 	);

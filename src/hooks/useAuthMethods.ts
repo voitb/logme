@@ -15,6 +15,8 @@ interface AuthMethods {
 	onSendEmailVerificationError?: (error: Error) => void;
 	onForgotPasswordSuccess?: () => void;
 	onForgotPasswordError?: (error: Error) => void;
+	onSendConfirmVerificationSuccess?: () => void;
+	onSendConfirmVerificationError?: (error: Error) => void;
 }
 
 export const useAuthMethods = (methods: AuthMethods = {}) => {
@@ -44,6 +46,10 @@ export const useAuthMethods = (methods: AuthMethods = {}) => {
 
 	const defaultOnForgotPasswordError = (error: Error) => {};
 
+	const defaultOnSendConfirmVerificationSuccess = () => {};
+
+	const defaultOnSendConfirmVerificationError = (error: Error) => {};
+
 	return {
 		onLoginSuccess: methods.onLoginSuccess || defaultOnLoginSuccess,
 		onLoginError: methods.onLoginError || defaultOnLoginError,
@@ -68,5 +74,11 @@ export const useAuthMethods = (methods: AuthMethods = {}) => {
 			methods.onForgotPasswordSuccess || defaultOnForgotPasswordSuccess,
 		onForgotPasswordError:
 			methods.onForgotPasswordError || defaultOnForgotPasswordError,
+		onSendConfirmVerificationSuccess:
+			methods.onSendConfirmVerificationSuccess ||
+			defaultOnSendConfirmVerificationSuccess,
+		onSendConfirmVerificationError:
+			methods.onSendConfirmVerificationError ||
+			defaultOnSendConfirmVerificationError,
 	};
 };

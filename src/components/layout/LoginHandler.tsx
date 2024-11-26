@@ -6,14 +6,47 @@ interface LoginHandlerProps {
 }
 
 const LoginHandler = ({ children }: LoginHandlerProps) => {
-	const { isLoggedIn } = useAuth();
+	const { isLoggedIn, isInitialized, user } = useAuth();
 
-	const redirectPaths = ["/forgot-password", "/register", "/login"];
+	// Ścieżki, które nie wymagają logowania
+	const publicPaths = [
+		"/reset-password",
+		"/forgot-password",
+		"/register",
+		"/login",
+	];
 
-	if (isLoggedIn && redirectPaths.includes(window.location.pathname)) {
-		window.location.href = "/";
+	// Poczekaj na pełną inicjalizację
+	if (!isInitialized) {
+		return null;
 	}
-	return children;
+
+	// Jeśli użytkownik nie jest zalogowany i znajduje się poza publiczną ścieżką, przekieruj na login
+	if (!isLoggedIn && !publicPaths.includes(window.location.pathname)) {
+		window.location.href = "/login";
+		return null;
+	}
+
+	// Jeśli użytkownik jest zalogowany, ale jego e-mail nie jest zweryfikowany
+	if (isLoggedIn && user && !user.emailVerification) {
+		if (
+			window.location.pathname !== "/verification-complete" &&
+			window.location.pathname !== "/verify"
+		) {
+			// Przekieruj na stronę weryfikacji
+			window.location.href = "/verify";
+			return null;
+		}
+	}
+
+	// Jeśli użytkownik jest zalogowany i na publicznej ścieżce, przekieruj na główną stronę
+	if (isLoggedIn && publicPaths.includes(window.location.pathname)) {
+		window.location.href = "/";
+		return null;
+	}
+
+	// Renderuj dzieci komponentu, gdy wszystkie warunki są spełnione
+	return <>{children}</>;
 };
 
 export default LoginHandler;

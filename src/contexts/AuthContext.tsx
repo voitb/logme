@@ -24,6 +24,7 @@ interface AuthProviderProps {
 
 export interface AuthContextType {
 	user: User | null;
+	isInitialized: boolean;
 	provider: "appwrite" | "supabase" | "custom";
 	isLoggedIn: boolean;
 	login: (email: string, password: string) => Promise<void>;
@@ -37,6 +38,7 @@ export interface AuthContextType {
 	forgotPassword: (email: string) => Promise<void>;
 	updateProfile: (profileDetails: ProfileDetails) => Promise<void>;
 	sendEmailVerification: () => Promise<void>;
+	sendVerifyEmail: (userId: string, secret: string) => Promise<void>;
 	isEmailVerified: () => Promise<boolean>;
 }
 
@@ -49,6 +51,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 }) => {
 	const [user, setUser] = useState<User | null>(null);
 	const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+	const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
 	const authManager = useMemo(() => {
 		const authProvider = AuthProviderFactory.createAuthProvider(provider);
@@ -69,17 +72,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 		onSendEmailVerificationError,
 		onForgotPasswordSuccess,
 		onForgotPasswordError,
+		onSendConfirmVerificationSuccess,
+		onSendConfirmVerificationError,
 	} = useAuthMethods(methods);
-
 	useEffect(() => {
-		const listener = (loggedIn: boolean, user: User | null) => {
+		const listener = (
+			loggedIn: boolean,
+			user: User | null,
+			isInitialized: boolean
+		) => {
 			if (!loggedIn) window.location.reload();
+			setIsInitialized(isInitialized);
 			setIsLoggedIn(loggedIn);
 			setUser(user);
 		};
 		authManager.subscribe(listener);
 		setIsLoggedIn(authManager.isUserLoggedIn());
 		setUser(authManager.getUser());
+		setIsInitialized(authManager.getInitialized());
 		return () => {
 			authManager.unsubscribe(listener);
 		};
@@ -158,11 +168,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 		return authManager.isEmailVerified();
 	};
 
+	const sendVerifyEmail = async (userId: string, secret: string) => {
+		try {
+			await authManager.sendConfirmVerification(userId, secret);
+			onSendConfirmVerificationSuccess();
+		} catch (error) {
+			onSendConfirmVerificationError(error as Error);
+			throw error;
+		}
+	};
+
 	return (
 		<AuthContext.Provider
 			value={{
 				user,
 				isLoggedIn,
+				isInitialized,
 				login,
 				logout,
 				register,
@@ -172,6 +193,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 				sendEmailVerification,
 				isEmailVerified,
 				forgotPassword,
+				sendVerifyEmail,
 			}}
 		>
 			{children}

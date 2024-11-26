@@ -13,6 +13,7 @@ import Cookies from "js-cookie";
 class AppwriteAuthProvider implements AuthProvider {
 	private user: User | null = null;
 	private isLoggedIn: boolean = false;
+	private isInitialized: boolean = false;
 	private listeners: AuthListener[] = [];
 
 	constructor() {
@@ -26,25 +27,29 @@ class AppwriteAuthProvider implements AuthProvider {
 		} else {
 			this.user = null;
 			this.isLoggedIn = false;
+			this.isInitialized = true;
+			console.log("No user cookie found");
 		}
 	}
 
 	private convertUser = (user: RawUser) => {
+		console.log(user);
 		return {
 			id: user.$id,
 			email: user.email,
 			username: user.name,
+			emailVerification: user.emailVerification,
 		};
 	};
 
 	private setUserFromAccount(currentUser: RawUser) {
 		this.user = this.convertUser(currentUser);
 		this.isLoggedIn = true;
+		this.isInitialized = true;
 	}
 
 	private setCookie(user: RawUser) {
-		this.convertUser(user);
-		Cookies.set("auth_user", JSON.stringify(this.user), { expires: 7 });
+		Cookies.set("auth_user", JSON.stringify(user), { expires: 7 });
 		this.notifyListeners();
 	}
 
@@ -67,12 +72,17 @@ class AppwriteAuthProvider implements AuthProvider {
 		await account.deleteSession("current");
 		this.user = null;
 		this.isLoggedIn = false;
+		this.isInitialized = true;
 		Cookies.remove("auth_user");
 		this.notifyListeners();
 	}
 
 	getUser(): User | null {
 		return this.user;
+	}
+
+	getInitialized(): boolean {
+		return this.isInitialized;
 	}
 
 	isUserLoggedIn(): boolean {
@@ -88,14 +98,26 @@ class AppwriteAuthProvider implements AuthProvider {
 	}
 
 	private notifyListeners(): void {
-		this.listeners.forEach((listener) => listener(this.isLoggedIn, this.user));
+		this.listeners.forEach((listener) =>
+			listener(this.isLoggedIn, this.user, this.isInitialized)
+		);
 	}
 
-	async resetPassword(email: string): Promise<void> {}
+	async resetPassword(password: string): Promise<void> {}
+
+	async forgotPassword(email: string): Promise<void> {}
 
 	async updateProfile(profileDetails: ProfileDetails): Promise<void> {}
 
-	async sendEmailVerification(): Promise<void> {}
+	async sendEmailVerification(): Promise<void> {
+		await account.createVerification(
+			window.location.origin + "/verification-complete"
+		);
+	}
+	async sendConfirmVerification(userId: string, secret: string): Promise<void> {
+		await account.updateVerification(userId, secret);
+		window.location.href = "/";
+	}
 
 	async isEmailVerified(): Promise<boolean> {
 		// const currentUser = await account.get();

@@ -6,15 +6,21 @@ export interface User {
 	email: string;
 	username?: string;
 	avatar?: string;
+	emailVerification?: boolean;
 }
 
-export type AuthListener = (isLoggedIn: boolean, user: User | null) => void;
+export type AuthListener = (
+	isLoggedIn: boolean,
+	user: User | null,
+	isInitialized: boolean
+) => void;
 
 export interface AuthProvider {
 	login(email: string, password: string): Promise<void>;
 	register(userDetails: RegisterDetails): Promise<void>;
 	logout(): Promise<void>;
 	getUser(): User | null;
+	getInitialized(): boolean;
 	isUserLoggedIn(): boolean;
 	subscribe(listener: AuthListener): void;
 	unsubscribe(listener: AuthListener): void;
@@ -22,6 +28,7 @@ export interface AuthProvider {
 	forgotPassword(email: string): Promise<void>;
 	updateProfile(profileDetails: ProfileDetails): Promise<void>;
 	sendEmailVerification(): Promise<void>;
+	sendConfirmVerification(userId: string, secret: string): Promise<void>;
 	isEmailVerified(): Promise<boolean>;
 }
 
