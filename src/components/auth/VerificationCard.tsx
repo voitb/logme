@@ -32,9 +32,9 @@ const VerificationCard = () => {
 	}
 
 	return (
-		<div className="border border-red-500 rounded-lg p-4 bg-red-50 text-red-700">
-			<h3 className="font-bold text-lg">Verify Your Email</h3>
-			<p className="text-sm">
+		<div className="max-w-lg mx-auto mt-6 rounded-lg border border-gray-200 bg-gray-50 p-6 shadow-md">
+			<h3 className="text-lg font-semibold text-gray-800">Verify Your Email</h3>
+			<p className="mt-2 text-sm text-gray-600">
 				Your account is not verified yet. Please verify your email to access all
 				features.
 			</p>

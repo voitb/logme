@@ -76,12 +76,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 		onSendConfirmVerificationError,
 	} = useAuthMethods(methods);
 	useEffect(() => {
+		if (!authManager) return;
 		const listener = (
 			loggedIn: boolean,
 			user: User | null,
 			isInitialized: boolean
 		) => {
-			if (!loggedIn) window.location.reload();
+			if (!loggedIn && isInitialized) window.location.reload();
 			setIsInitialized(isInitialized);
 			setIsLoggedIn(loggedIn);
 			setUser(user);

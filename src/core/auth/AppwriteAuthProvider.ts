@@ -15,25 +15,52 @@ class AppwriteAuthProvider implements AuthProvider {
 	private isLoggedIn: boolean = false;
 	private isInitialized: boolean = false;
 	private listeners: AuthListener[] = [];
+	private isLoadingUser: boolean = false;
 
 	constructor() {
 		this.loadUserFromCookies();
 	}
 
-	private loadUserFromCookies() {
+	private async loadUserFromCookies() {
+		if (this.isLoadingUser) return;
+
+		this.isLoadingUser = true;
+
 		const userCookie = Cookies.get("auth_user");
 		if (userCookie) {
-			this.setUserFromAccount(JSON.parse(userCookie));
+			const parsedCookie = JSON.parse(userCookie);
+			const expiresAt = new Date(parsedCookie.expiresAt);
+
+			if (expiresAt > new Date()) {
+				try {
+					const currentUser = await account.get();
+					this.setUserFromAccount(currentUser);
+				} catch (error) {
+					console.error("Failed to fetch user from Appwrite:", error);
+					this.clearAuthState();
+				}
+			} else {
+				this.logout();
+				console.log("User cookie has expired");
+				this.clearAuthState();
+			}
 		} else {
-			this.user = null;
-			this.isLoggedIn = false;
-			this.isInitialized = true;
 			console.log("No user cookie found");
+			this.clearAuthState();
 		}
+
+		this.isLoadingUser = false;
 	}
 
-	private convertUser = (user: RawUser) => {
-		console.log(user);
+	private clearAuthState() {
+		this.user = null;
+		this.isLoggedIn = false;
+		this.isInitialized = true;
+		Cookies.remove("auth_user");
+		this.notifyListeners();
+	}
+
+	private convertUser = (user: RawUser): User => {
 		return {
 			id: user.$id,
 			email: user.email,
@@ -46,11 +73,29 @@ class AppwriteAuthProvider implements AuthProvider {
 		this.user = this.convertUser(currentUser);
 		this.isLoggedIn = true;
 		this.isInitialized = true;
+		this.notifyListeners();
 	}
 
 	private setCookie(user: RawUser) {
-		Cookies.set("auth_user", JSON.stringify(user), { expires: 7 });
+		const expires = new Date();
+		expires.setDate(expires.getDate() + 7);
+		const cookieData = { user, expiresAt: expires.toISOString() };
+		Cookies.set("auth_user", JSON.stringify(cookieData), { expires: 7 });
 		this.notifyListeners();
+	}
+
+	private updateCookie(updatedUser: Partial<RawUser>) {
+		const existingCookie = Cookies.get("auth_user");
+		if (existingCookie) {
+			const parsedCookie = JSON.parse(existingCookie);
+			const newUser = { ...parsedCookie.user, ...updatedUser };
+			const expiresAt = parsedCookie.expiresAt;
+
+			Cookies.set("auth_user", JSON.stringify({ user: newUser, expiresAt }), {
+				expires: new Date(expiresAt),
+			});
+			this.notifyListeners();
+		}
 	}
 
 	async login(email: string, password: string): Promise<void> {
@@ -70,11 +115,7 @@ class AppwriteAuthProvider implements AuthProvider {
 
 	async logout(): Promise<void> {
 		await account.deleteSession("current");
-		this.user = null;
-		this.isLoggedIn = false;
-		this.isInitialized = true;
-		Cookies.remove("auth_user");
-		this.notifyListeners();
+		this.clearAuthState();
 	}
 
 	getUser(): User | null {
@@ -114,15 +155,16 @@ class AppwriteAuthProvider implements AuthProvider {
 			window.location.origin + "/verification-complete"
 		);
 	}
+
 	async sendConfirmVerification(userId: string, secret: string): Promise<void> {
 		await account.updateVerification(userId, secret);
+		const user = await account.get();
+		this.updateCookie(user);
 		window.location.href = "/";
 	}
 
 	async isEmailVerified(): Promise<boolean> {
-		// const currentUser = await account.get();
-		// return currentUser.emailVerification;
-		return false;
+		return this.user?.emailVerification || false;
 	}
 }
 
