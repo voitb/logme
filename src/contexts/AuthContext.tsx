@@ -1,7 +1,7 @@
 // AuthContext.tsx
 import React, { createContext, useEffect, useState, useMemo } from "react";
 import AuthManager from "@/core/auth/AuthManager";
-import { User, ProfileDetails } from "@/types";
+import { User, ProfileDetails, RawUser } from "@/types";
 import { AuthProviderFactory } from "../core/AuthProviderFactory";
 import { useAuthMethods } from "../hooks/useAuthMethods";
 interface AuthProviderProps {
@@ -19,6 +19,7 @@ interface AuthProviderProps {
 		onUpdateProfileError?: (error: Error) => void;
 		onSendEmailVerificationSuccess?: () => void;
 		onSendEmailVerificationError?: (error: Error) => void;
+		navigate?: (path: string) => void;
 	};
 }
 
@@ -39,7 +40,11 @@ export interface AuthContextType {
 	updateProfile: (profileDetails: ProfileDetails) => Promise<void>;
 	sendEmailVerification: () => Promise<void>;
 	sendVerifyEmail: (userId: string, secret: string) => Promise<void>;
-	isEmailVerified: () => Promise<boolean>;
+	getIsEmailVerified: () => Promise<boolean>;
+	setCookie(user: RawUser): void;
+	setSession(userId: string, secret: string): void;
+	fetchLoggedUser: () => Promise<void>;
+	navigate?: (path: string) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -82,7 +87,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 			user: User | null,
 			isInitialized: boolean
 		) => {
-			if (!loggedIn && isInitialized) window.location.reload();
+			// if (!isInitialized) return;
+			// if (!loggedIn && isInitialized) window.location.reload();
 			setIsInitialized(isInitialized);
 			setIsLoggedIn(loggedIn);
 			setUser(user);
@@ -165,8 +171,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 		}
 	};
 
-	const isEmailVerified = async (): Promise<boolean> => {
-		return authManager.isEmailVerified();
+	const getIsEmailVerified = async (): Promise<boolean> => {
+		return authManager.getIsEmailVerified();
 	};
 
 	const sendVerifyEmail = async (userId: string, secret: string) => {
@@ -177,6 +183,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 			onSendConfirmVerificationError(error as Error);
 			throw error;
 		}
+	};
+	const setCookie = async (user: RawUser) => {
+		await authManager.setCookie(user);
+	};
+	const setSession = async (userId: string, secret: string) => {
+		await authManager.setSession(userId, secret);
+	};
+	const fetchLoggedUser = async () => {
+		await authManager.fetchLoggedUser();
 	};
 
 	return (
@@ -192,9 +207,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 				resetPassword,
 				updateProfile,
 				sendEmailVerification,
-				isEmailVerified,
+				getIsEmailVerified,
 				forgotPassword,
 				sendVerifyEmail,
+				setCookie,
+				navigate: methods.navigate,
+				setSession,
+				fetchLoggedUser,
 			}}
 		>
 			{children}

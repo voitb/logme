@@ -1,9 +1,11 @@
 import { FcGoogle } from "react-icons/fc";
 import { Button } from "../../ui/button";
+import { loginWithOAuth } from "../../../lib/appwrite";
+import { OAuthProvider } from "appwrite";
 
 const GoogleLoginButton = () => {
 	const handleGoogleLogin = () => {
-		// Implement Google login logic
+		loginWithOAuth(OAuthProvider.Google);
 	};
 
 	return (

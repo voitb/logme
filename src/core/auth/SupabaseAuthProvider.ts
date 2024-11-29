@@ -108,7 +108,9 @@ class SupabaseAuthProvider implements AuthProvider {
 	}
 
 	private notifyListeners(): void {
-		this.listeners.forEach((listener) => listener(this.isLoggedIn, this.user));
+		this.listeners.forEach((listener) =>
+			listener(this.isLoggedIn, this.user, this.isInitialized)
+		);
 	}
 
 	async resetPassword(email: string): Promise<void> {
@@ -147,7 +149,7 @@ class SupabaseAuthProvider implements AuthProvider {
 		// Supabase does not provide a direct method to resend verification emails
 	}
 
-	async isEmailVerified(): Promise<boolean> {
+	async getIsEmailVerified(): Promise<boolean> {
 		const { data, error } = await supabase.auth.getUser();
 		if (error || !data.user) throw error || new Error("Failed to fetch user");
 		return data.user.email_confirmed_at !== null;

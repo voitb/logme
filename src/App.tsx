@@ -1,3 +1,5 @@
+// import OAuthSuccess from "./components/auth/OAuthSuccess";
+import OAuthSuccess from "./components/auth/OAuthSuccess";
 import UserCard from "./components/auth/UserCard";
 import VerificationCard from "./components/auth/VerificationCard";
 import VerificationComplete from "./components/auth/VerificationComplete";
@@ -45,7 +47,11 @@ function App() {
 
 	const showUserCard = () => {
 		if (window.location.pathname === "/") {
-			return <UserCard />;
+			return (
+				<div className="flex justify-end w-screen">
+					<UserCard />
+				</div>
+			);
 		}
 	};
 	const showVerificationCard = () => {
@@ -56,6 +62,11 @@ function App() {
 	const showVerificationAcceptCard = () => {
 		if (window.location.pathname === "/verification-complete") {
 			return <VerificationComplete />;
+		}
+	};
+	const showLogging = () => {
+		if (window.location.pathname === "/logging") {
+			return <OAuthSuccess />;
 		}
 	};
 
@@ -70,6 +81,7 @@ function App() {
 				{showUserCard()}
 				{showVerificationCard()}
 				{showVerificationAcceptCard()}
+				{showLogging()}
 			</LoginHandler>
 		</AuthProvider>
 	);

@@ -29,7 +29,10 @@ export interface AuthProvider {
 	updateProfile(profileDetails: ProfileDetails): Promise<void>;
 	sendEmailVerification(): Promise<void>;
 	sendConfirmVerification(userId: string, secret: string): Promise<void>;
-	isEmailVerified(): Promise<boolean>;
+	getIsEmailVerified(): Promise<boolean>;
+	setCookie(user: RawUser): void;
+	setSession(userId: string, secret: string): void;
+	fetchLoggedUser: () => Promise<void>;
 }
 
 export interface RegisterDetails {

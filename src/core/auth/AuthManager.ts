@@ -4,6 +4,7 @@ import {
 	AuthProvider,
 	RegisterDetails,
 	ProfileDetails,
+	RawUser,
 } from "../../types/auth.types";
 
 class AuthManager {
@@ -41,6 +42,17 @@ class AuthManager {
 		this.authProvider.subscribe(listener);
 	}
 
+	public setCookie(user: RawUser) {
+		this.authProvider.setCookie(user);
+	}
+	public setSession(userId: string, secret: string) {
+		this.authProvider.setSession(userId, secret);
+	}
+
+	public fetchLoggedUser() {
+		return this.authProvider.fetchLoggedUser();
+	}
+
 	public unsubscribe(listener: AuthListener): void {
 		this.authProvider.unsubscribe(listener);
 	}
@@ -67,8 +79,8 @@ class AuthManager {
 		return this.authProvider.sendConfirmVerification(userId, secret);
 	}
 
-	public async isEmailVerified(): Promise<boolean> {
-		return this.authProvider.isEmailVerified();
+	public async getIsEmailVerified(): Promise<boolean> {
+		return this.authProvider.getIsEmailVerified();
 	}
 }
 

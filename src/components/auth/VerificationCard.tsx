@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth"; // Custom hook for authentication
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -28,7 +28,7 @@ const VerificationCard = () => {
 	};
 
 	if (!user || user.emailVerification) {
-		return null; // Do not display if the user is null or already verified
+		return null;
 	}
 
 	return (

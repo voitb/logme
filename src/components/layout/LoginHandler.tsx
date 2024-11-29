@@ -10,21 +10,30 @@ const LoginHandler = ({ children }: LoginHandlerProps) => {
 
 	// Ścieżki, które nie wymagają logowania
 	const publicPaths = [
+		"/logging",
 		"/reset-password",
 		"/forgot-password",
 		"/register",
 		"/login",
 	];
 
+	console.log(
+		"isLoggedIn",
+		isLoggedIn,
+		"isInitialized",
+		isInitialized,
+		"user",
+		user
+	);
+
 	// Ścieżki związane z weryfikacją
-	const verificationPaths = ["/verify", "/verification-complete"];
+	const verificationPaths = ["/verify", "/verification-complete", "/logging"];
 
 	// Poczekaj na pełną inicjalizację
 	if (!isInitialized) {
 		return null;
 	}
 
-	// Jeśli użytkownik nie jest zalogowany i znajduje się poza publiczną ścieżką, przekieruj na login
 	if (!isLoggedIn && !publicPaths.includes(window.location.pathname)) {
 		window.location.href = "/login";
 		return null;
