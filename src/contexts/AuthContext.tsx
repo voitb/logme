@@ -1,12 +1,17 @@
-// AuthContext.tsx
 import React, { createContext, useEffect, useState, useMemo } from "react";
 import AuthManager from "@/core/auth/AuthManager";
-import { User, ProfileDetails, RawUser } from "@/types";
+import {
+	User,
+	ProfileDetails,
+	AuthProvider as AuthProviderInterface,
+} from "@/types";
 import { AuthProviderFactory } from "../core/AuthProviderFactory";
 import { useAuthMethods } from "../hooks/useAuthMethods";
+
 interface AuthProviderProps {
 	children: React.ReactNode;
 	provider?: "appwrite" | "supabase" | "custom";
+	customProvider?: AuthProviderInterface;
 	methods?: {
 		onLoginSuccess?: (user: User) => void;
 		onLoginError?: (error: Error) => void;
@@ -35,15 +40,19 @@ export interface AuthContextType {
 		username?: string
 	) => Promise<void>;
 	logout: () => Promise<void>;
-	resetPassword: (password: string) => Promise<void>;
 	forgotPassword: (email: string) => Promise<void>;
+	sendResetPassword: (
+		userId: string,
+		secret: string,
+		newPassword: string
+	) => Promise<void>;
 	updateProfile: (profileDetails: ProfileDetails) => Promise<void>;
 	sendEmailVerification: () => Promise<void>;
 	sendVerifyEmail: (userId: string, secret: string) => Promise<void>;
 	getIsEmailVerified: () => Promise<boolean>;
-	setCookie(user: RawUser): void;
-	setSession(userId: string, secret: string): void;
+	setSession(userId: string, secret: string): Promise<void>;
 	fetchLoggedUser: () => Promise<void>;
+	isLoadingUser: boolean;
 	navigate?: (path: string) => void;
 }
 
@@ -52,16 +61,30 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider: React.FC<AuthProviderProps> = ({
 	children,
 	provider = "appwrite",
+	customProvider,
 	methods = {},
 }) => {
 	const [user, setUser] = useState<User | null>(null);
 	const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 	const [isInitialized, setIsInitialized] = useState<boolean>(false);
+	const [isLoadingUser, setIsLoadingUser] = useState<boolean>(false);
 
 	const authManager = useMemo(() => {
-		const authProvider = AuthProviderFactory.createAuthProvider(provider);
+		let authProvider: AuthProviderInterface;
+
+		if (provider === "custom") {
+			if (!customProvider) {
+				throw new Error(
+					"Custom provider is required when provider is set to 'custom'"
+				);
+			}
+			authProvider = customProvider;
+		} else {
+			authProvider = AuthProviderFactory.createAuthProvider(provider);
+		}
+
 		return new AuthManager(authProvider);
-	}, [provider]);
+	}, [provider, customProvider]);
 
 	const {
 		onLoginSuccess,
@@ -75,28 +98,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 		onUpdateProfileError,
 		onSendEmailVerificationSuccess,
 		onSendEmailVerificationError,
-		onForgotPasswordSuccess,
-		onForgotPasswordError,
-		onSendConfirmVerificationSuccess,
-		onSendConfirmVerificationError,
 	} = useAuthMethods(methods);
+
 	useEffect(() => {
 		if (!authManager) return;
+
+		const initializeAuth = async () => {
+			await authManager.initialize();
+		};
+
 		const listener = (
 			loggedIn: boolean,
 			user: User | null,
 			isInitialized: boolean
 		) => {
-			// if (!isInitialized) return;
-			// if (!loggedIn && isInitialized) window.location.reload();
 			setIsInitialized(isInitialized);
+			setIsLoadingUser(authManager.getIsLoading());
 			setIsLoggedIn(loggedIn);
 			setUser(user);
 		};
+
 		authManager.subscribe(listener);
-		setIsLoggedIn(authManager.isUserLoggedIn());
-		setUser(authManager.getUser());
-		setIsInitialized(authManager.getInitialized());
+
+		initializeAuth();
 		return () => {
 			authManager.unsubscribe(listener);
 		};
@@ -106,9 +130,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 		try {
 			await authManager.login(email, password);
 			const user = authManager.getUser()!;
-			onLoginSuccess(user);
+			onLoginSuccess && onLoginSuccess(user);
 		} catch (error) {
-			onLoginError(error as Error);
+			onLoginError && onLoginError(error as Error);
 			throw error;
 		}
 	};
@@ -120,33 +144,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 	) => {
 		try {
 			await authManager.register({ email, password, username });
-			onRegisterSuccess();
+			onRegisterSuccess && onRegisterSuccess();
 		} catch (error) {
-			onRegisterError(error as Error);
+			onRegisterError && onRegisterError(error as Error);
 			throw error;
 		}
 	};
 
 	const logout = async () => {
 		await authManager.logout();
-		onLogout();
+		onLogout && onLogout();
 	};
 
-	const resetPassword = async (email: string) => {
-		try {
-			await authManager.resetPassword(email);
-			onResetPasswordSuccess();
-		} catch (error) {
-			onResetPasswordError(error as Error);
-			throw error;
-		}
-	};
 	const forgotPassword = async (email: string) => {
 		try {
 			await authManager.forgotPassword(email);
-			onForgotPasswordSuccess();
+			// Handle success if needed
 		} catch (error) {
-			onForgotPasswordError(error as Error);
+			// Handle error if needed
+			throw error;
+		}
+	};
+
+	const sendResetPassword = async (
+		userId: string,
+		secret: string,
+		newPassword: string
+	) => {
+		try {
+			await authManager.sendResetPassword(userId, secret, newPassword);
+			// Handle success if needed
+		} catch (error) {
+			// Handle error if needed
 			throw error;
 		}
 	};
@@ -154,9 +183,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 	const updateProfile = async (profileDetails: ProfileDetails) => {
 		try {
 			await authManager.updateProfile(profileDetails);
-			onUpdateProfileSuccess();
+			onUpdateProfileSuccess && onUpdateProfileSuccess();
 		} catch (error) {
-			onUpdateProfileError(error as Error);
+			onUpdateProfileError && onUpdateProfileError(error as Error);
 			throw error;
 		}
 	};
@@ -164,9 +193,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 	const sendEmailVerification = async () => {
 		try {
 			await authManager.sendEmailVerification();
-			onSendEmailVerificationSuccess();
+			onSendEmailVerificationSuccess && onSendEmailVerificationSuccess();
 		} catch (error) {
-			onSendEmailVerificationError(error as Error);
+			onSendEmailVerificationError &&
+				onSendEmailVerificationError(error as Error);
 			throw error;
 		}
 	};
@@ -178,18 +208,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 	const sendVerifyEmail = async (userId: string, secret: string) => {
 		try {
 			await authManager.sendConfirmVerification(userId, secret);
-			onSendConfirmVerificationSuccess();
+			// Handle success if needed
 		} catch (error) {
-			onSendConfirmVerificationError(error as Error);
+			// Handle error if needed
 			throw error;
 		}
 	};
-	const setCookie = async (user: RawUser) => {
-		await authManager.setCookie(user);
-	};
+
 	const setSession = async (userId: string, secret: string) => {
 		await authManager.setSession(userId, secret);
 	};
+
 	const fetchLoggedUser = async () => {
 		await authManager.fetchLoggedUser();
 	};
@@ -204,16 +233,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 				logout,
 				register,
 				provider,
-				resetPassword,
 				updateProfile,
 				sendEmailVerification,
 				getIsEmailVerified,
 				forgotPassword,
 				sendVerifyEmail,
-				setCookie,
-				navigate: methods.navigate,
 				setSession,
 				fetchLoggedUser,
+				isLoadingUser,
+				sendResetPassword,
+				navigate: methods.navigate,
 			}}
 		>
 			{children}

@@ -76,9 +76,18 @@ const LoginForm = () => {
 							<FormMessage className="absolute text-[11px] !mt-1">
 								{form.formState.errors.username?.message}
 							</FormMessage>
+							<div className="flex justify-end">
+								<a
+									href="/forgot-password"
+									className="text-sm text-blue-500 hover:underline"
+								>
+									Forgot Password?
+								</a>
+							</div>
 						</FormItem>
 					)}
 				/>
+
 				<Button type="submit" className="w-full !mt-10">
 					Log in
 				</Button>

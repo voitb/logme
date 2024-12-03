@@ -4,7 +4,7 @@ import {
 	AuthProvider,
 	RegisterDetails,
 	ProfileDetails,
-	RawUser,
+	AppwriteRawUser,
 } from "../../types/auth.types";
 
 class AuthManager {
@@ -12,6 +12,10 @@ class AuthManager {
 
 	constructor(authProvider: AuthProvider) {
 		this.authProvider = authProvider;
+	}
+
+	public async initialize(): Promise<void> {
+		await this.authProvider.initialize();
 	}
 
 	public async login(email: string, password: string): Promise<void> {
@@ -42,26 +46,20 @@ class AuthManager {
 		this.authProvider.subscribe(listener);
 	}
 
-	public setCookie(user: RawUser) {
-		this.authProvider.setCookie(user);
-	}
-	public setSession(userId: string, secret: string) {
-		this.authProvider.setSession(userId, secret);
-	}
-
-	public fetchLoggedUser() {
-		return this.authProvider.fetchLoggedUser();
-	}
-
 	public unsubscribe(listener: AuthListener): void {
 		this.authProvider.unsubscribe(listener);
 	}
 
-	public async resetPassword(email: string): Promise<void> {
-		return this.authProvider.resetPassword(email);
-	}
 	public async forgotPassword(email: string): Promise<void> {
 		return this.authProvider.forgotPassword(email);
+	}
+
+	public async sendResetPassword(
+		userId: string,
+		secret: string,
+		newPassword: string
+	): Promise<void> {
+		return this.authProvider.sendResetPassword(userId, secret, newPassword);
 	}
 
 	public async updateProfile(profileDetails: ProfileDetails): Promise<void> {
@@ -81,6 +79,22 @@ class AuthManager {
 
 	public async getIsEmailVerified(): Promise<boolean> {
 		return this.authProvider.getIsEmailVerified();
+	}
+
+	public getIsLoading(): boolean {
+		return this.authProvider.getIsLoading();
+	}
+
+	public async setSession(userId: string, secret: string): Promise<void> {
+		await this.authProvider.setSession(userId, secret);
+	}
+
+	public async fetchLoggedUser(): Promise<void> {
+		await this.authProvider.fetchLoggedUser();
+	}
+
+	public setCookie(user: AppwriteRawUser): void {
+		this.authProvider.setCookie(user);
 	}
 }
 

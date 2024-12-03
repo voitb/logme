@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { account } from "../../lib/appwrite";
+// OAuthSuccess.tsx
+import React, { useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { Loader } from "lucide-react";
 import useNavigationHandler from "../../hooks/useNavigationHandler";
 
 const OAuthSuccess = () => {
-	const { setCookie, setOAuth, fetchLoggedUser, setSession } = useAuth();
+	const { setSession } = useAuth();
 	const navigate = useNavigationHandler();
 
 	useEffect(() => {
@@ -14,30 +14,18 @@ const OAuthSuccess = () => {
 			const userId = params.get("userId");
 			const secret = params.get("secret");
 
+			if (!userId || !secret) {
+				console.error("Missing userId or secret in URL");
+				navigate("/error");
+				return;
+			}
+
 			try {
-				// await account.deleteSessions();
-				await fetchLoggedUser();
-
-				if (!userId || !secret) {
-					// navigate("/error");
-					return;
-				}
-
-				// navigate("/");
+				await setSession(userId, secret);
+				navigate("/");
 			} catch (error) {
-				if (error.code === 401) {
-					try {
-						console.log("Creating session...");
-						await setSession(userId, secret);
-						// navigate("/");
-					} catch (sessionError) {
-						console.error("Error creating session:", sessionError);
-						// navigate("/error");
-					}
-				} else {
-					console.error("Unexpected error:", error);
-					// navigate("/error");
-				}
+				console.error("Error setting session:", error);
+				navigate("/error");
 			}
 		};
 

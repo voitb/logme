@@ -1,98 +1,183 @@
+// SupabaseAuthProvider.ts
 import { supabase } from "../../lib/supabase";
 import {
 	User,
 	AuthListener,
 	AuthProvider,
-	RegisterDetails,
 	ProfileDetails,
+	RegisterDetails,
 } from "../../types/auth.types";
 import Cookies from "js-cookie";
 
 class SupabaseAuthProvider implements AuthProvider {
 	private user: User | null = null;
 	private isLoggedIn: boolean = false;
+	private isInitialized: boolean = false;
 	private listeners: AuthListener[] = [];
+	private isLoadingUser: boolean = false;
 
-	constructor() {
-		this.loadUserFromCookies();
-		this.initializeUser();
+	constructor() {}
 
-		supabase.auth.onAuthStateChange((event, session) => {
-			if (event === "SIGNED_IN" && session) {
-				this.setUserFromSession(session);
-			} else if (event === "SIGNED_OUT") {
-				this.user = null;
-				this.isLoggedIn = false;
-				Cookies.remove("auth_user");
+	public async initialize() {
+		const sessionCookie = Cookies.get("auth_session");
+		if (this.isLoadingUser) return;
+
+		this.isLoadingUser = true;
+
+		if (sessionCookie) {
+			try {
+				const {
+					data: { session },
+					error,
+				} = await supabase.auth.getSession();
+				if (error || !session || !session.user) {
+					throw error || new Error("No active session");
+				}
+				await this.setUserFromSession(session);
+			} catch (error) {
+				console.error("Failed to fetch user from Supabase:", error);
+				this.clearAuthState();
+			} finally {
+				this.isLoadingUser = false;
+				this.isInitialized = true;
 				this.notifyListeners();
 			}
-		});
-	}
-
-	private async initializeUser() {
-		const { data, error } = await supabase.auth.getSession();
-		if (error) return;
-		const { session } = data;
-		if (session) {
-			this.setUserFromSession(session);
-		}
-	}
-
-	private loadUserFromCookies() {
-		const userCookie = Cookies.get("auth_user");
-		if (userCookie) {
-			this.user = JSON.parse(userCookie);
-			this.isLoggedIn = true;
 		} else {
-			this.user = null;
-			this.isLoggedIn = false;
+			// No session cookie exists
+			this.isLoadingUser = false;
+			this.isInitialized = true;
+			this.notifyListeners();
 		}
 	}
 
-	private setUserFromSession(session: any) {
-		const { user } = session;
-		this.user = {
-			id: user.id,
-			email: user.email,
-			username: user.user_metadata?.username,
-		};
-		this.isLoggedIn = true;
-		Cookies.set("auth_user", JSON.stringify(this.user), { expires: 7 });
+	private clearAuthState() {
+		this.user = null;
+		this.isLoggedIn = false;
+		Cookies.remove("auth_session");
 		this.notifyListeners();
 	}
 
+	private convertUser = (user: any): User => {
+		return {
+			id: user.id,
+			email: user.email,
+			username: user.user_metadata?.username || "",
+			emailVerification: user.email_confirmed_at ? true : false,
+		};
+	};
+
+	private async setUserFromSession(session: any) {
+		this.user = this.convertUser(session.user);
+		this.isLoggedIn = true;
+		this.setCookie();
+		this.notifyListeners();
+	}
+
+	public async fetchLoggedUser() {
+		try {
+			const {
+				data: { session },
+				error,
+			} = await supabase.auth.getSession();
+			if (error || !session || !session.user) {
+				throw error || new Error("No active session");
+			}
+			await this.setUserFromSession(session);
+		} catch (error) {
+			console.error("Failed to fetch user from Supabase:", error);
+			this.clearAuthState();
+		}
+	}
+
 	async login(email: string, password: string): Promise<void> {
-		const { data, error } = await supabase.auth.signInWithPassword({
-			email,
-			password,
-		});
-		if (error || !data.session) throw error || new Error("Login failed");
-		this.setUserFromSession(data.session);
+		const {
+			data: { session },
+			error,
+		} = await supabase.auth.signInWithPassword({ email, password });
+		if (error || !session || !session.user) {
+			throw error || new Error("Login failed");
+		}
+		await this.setUserFromSession(session);
 	}
 
 	async register(userDetails: RegisterDetails): Promise<void> {
 		const { email, password, username } = userDetails;
-		const { data, error } = await supabase.auth.signUp({
+		const {
+			data: { user, session },
+			error,
+		} = await supabase.auth.signUp({
 			email,
 			password,
 			options: {
-				data: { username },
+				data: {
+					username: username || "",
+				},
 			},
 		});
-		if (error || !data.user) throw error || new Error("Registration failed");
+		if (error || !user) {
+			throw error || new Error("Registration failed");
+		}
+		// Supabase may or may not create a session upon sign-up depending on your settings
+		if (session) {
+			await this.setUserFromSession(session);
+		}
 	}
 
 	async logout(): Promise<void> {
 		const { error } = await supabase.auth.signOut();
-		if (error) throw error;
-		this.user = null;
-		this.isLoggedIn = false;
-		Cookies.remove("auth_user");
-		this.notifyListeners();
+		if (error) {
+			console.error("Logout failed:", error);
+		}
+		this.clearAuthState();
+	}
+
+	async setSession(accessToken: string, refreshToken: string): Promise<void> {
+		this.isLoadingUser = true;
+		try {
+			const {
+				data: { session },
+				error,
+			} = await supabase.auth.setSession({
+				access_token: accessToken,
+				refresh_token: refreshToken,
+			});
+			if (error || !session || !session.user) {
+				throw error || new Error("Failed to set session");
+			}
+			await this.setUserFromSession(session);
+		} catch (error) {
+			console.error("Failed to set session:", error);
+			this.clearAuthState();
+		} finally {
+			this.isLoadingUser = false;
+			this.notifyListeners();
+		}
+	}
+
+	async sendResetPassword(): // accessToken: string,
+	// secret: string,
+	// newPassword: string
+	Promise<void> {
+		// Supabase handles password reset via email
+		// const { error } = await supabase.auth.updateUser(
+		//   { password: newPassword },
+		//   { accessToken }
+		// );
+		// if (error) {
+		//   throw error;
+		// }
 	}
 
 	getUser(): User | null {
 		return this.user;
+	}
+
+	public getIsLoading(): boolean {
+		return this.isLoadingUser;
+	}
+
+	getInitialized(): boolean {
+		return this.isInitialized;
 	}
 
 	isUserLoggedIn(): boolean {
@@ -107,7 +192,7 @@ class SupabaseAuthProvider implements AuthProvider {
 		this.listeners = this.listeners.filter((l) => l !== listener);
 	}
 
-	private notifyListeners(): void {
+	private notifyListeners() {
 		this.listeners.forEach((listener) =>
 			listener(this.isLoggedIn, this.user, this.isInitialized)
 		);
@@ -115,44 +200,59 @@ class SupabaseAuthProvider implements AuthProvider {
 
 	async resetPassword(email: string): Promise<void> {
 		const { error } = await supabase.auth.resetPasswordForEmail(email, {
-			redirectTo: "https://your-app.com/reset-password",
+			redirectTo: `${window.location.origin}/reset-password`,
 		});
-		if (error) throw error;
+		if (error) {
+			throw error;
+		}
+	}
+
+	async forgotPassword(email: string): Promise<void> {
+		await this.resetPassword(email);
 	}
 
 	async updateProfile(profileDetails: ProfileDetails): Promise<void> {
-		const updates: any = {};
-
-		if (profileDetails.email) {
-			updates.email = profileDetails.email;
+		const { error } = await supabase.auth.updateUser({
+			email: profileDetails.email,
+			password: profileDetails.password,
+			data: {
+				username: profileDetails.username,
+				...profileDetails,
+			},
+		});
+		if (error) {
+			throw error;
 		}
-		if (profileDetails.password) {
-			updates.password = profileDetails.password;
-		}
-		if (profileDetails.username) {
-			updates.data = { username: profileDetails.username };
-		}
-
-		const { data, error } = await supabase.auth.updateUser(updates);
-		if (error || !data.user) throw error || new Error("Profile update failed");
-
-		this.user = {
-			id: data.user.id,
-			email: data.user.email as string,
-			username: data.user.user_metadata?.username,
-		};
-		Cookies.set("auth_user", JSON.stringify(this.user), { expires: 7 });
-		this.notifyListeners();
+		await this.fetchLoggedUser();
 	}
 
 	async sendEmailVerification(): Promise<void> {
-		// Supabase does not provide a direct method to resend verification emails
+		// Supabase sends email verification automatically on sign up
+		// To resend, use supabase.auth.resend()
+		const { error } = await supabase.auth.resend({
+			type: "signup",
+			email: this.user?.email as string,
+		});
+		if (error) {
+			throw error;
+		}
+	}
+
+	async sendConfirmVerification(): // userId: string,
+	// secret: string
+	Promise<void> {
+		// Supabase handles email verification via magic link
+		// Typically, this is handled automatically
+		// Implement any additional logic if necessary
 	}
 
 	async getIsEmailVerified(): Promise<boolean> {
-		const { data, error } = await supabase.auth.getUser();
-		if (error || !data.user) throw error || new Error("Failed to fetch user");
-		return data.user.email_confirmed_at !== null;
+		await this.fetchLoggedUser();
+		return this.user?.emailVerification || false;
+	}
+
+	setCookie(): void {
+		Cookies.set("auth_session", "active", { expires: 7 });
 	}
 }
 

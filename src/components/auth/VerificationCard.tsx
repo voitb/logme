@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { useAuth } from "@/hooks/useAuth"; // Custom hook for authentication
+import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 
@@ -14,13 +14,13 @@ const VerificationCard = () => {
 			toast({
 				title: "Verification Email Sent",
 				description: "Please check your inbox to verify your email.",
-				status: "success",
+				type: "foreground",
 			});
-		} catch (err) {
+		} catch {
 			toast({
 				title: "Error Sending Email",
 				description: "Unable to send the verification email. Please try again.",
-				status: "error",
+				type: "background",
 			});
 		} finally {
 			setIsSending(false);
@@ -43,7 +43,7 @@ const VerificationCard = () => {
 				disabled={isSending}
 				className="mt-4"
 			>
-				{isSending ? "Sending..." : "Resend Verification Email"}
+				{isSending ? "Sending..." : "Send Verification Email"}
 			</Button>
 		</div>
 	);

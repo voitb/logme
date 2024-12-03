@@ -1,4 +1,5 @@
-// import OAuthSuccess from "./components/auth/OAuthSuccess";
+// App.tsx
+import React from "react";
 import OAuthSuccess from "./components/auth/OAuthSuccess";
 import UserCard from "./components/auth/UserCard";
 import VerificationCard from "./components/auth/VerificationCard";
@@ -15,74 +16,40 @@ import {
 import "./index.css";
 
 function App() {
-	const showLoginPage = () => {
-		if (window.location.pathname === "/login") {
-			return <LoginPage />;
-		}
-	};
+	const renderComponent = () => {
+		const path = window.location.pathname;
 
-	const showRegister = () => {
-		if (window.location.pathname === "/register") {
-			return <RegisterPage />;
-		}
-	};
-
-	const showLoginStatus = () => {
-		if (window.location.pathname === "/status") {
-			return <LoginStatus />;
-		}
-	};
-
-	const showForgotPassword = () => {
-		if (window.location.pathname === "/forgot-password") {
-			return <ForgotPasswordPage />;
-		}
-	};
-
-	const showResetPassword = () => {
-		if (window.location.pathname === "/reset-password") {
-			return <ResetPasswordPage />;
-		}
-	};
-
-	const showUserCard = () => {
-		if (window.location.pathname === "/") {
-			return (
-				<div className="flex justify-end w-screen">
-					<UserCard />
-				</div>
-			);
-		}
-	};
-	const showVerificationCard = () => {
-		if (window.location.pathname === "/verify") {
-			return <VerificationCard />;
-		}
-	};
-	const showVerificationAcceptCard = () => {
-		if (window.location.pathname === "/verification-complete") {
-			return <VerificationComplete />;
-		}
-	};
-	const showLogging = () => {
-		if (window.location.pathname === "/logging") {
-			return <OAuthSuccess />;
+		switch (path) {
+			case "/login":
+				return <LoginPage />;
+			case "/register":
+				return <RegisterPage />;
+			case "/status":
+				return <LoginStatus />;
+			case "/forgot-password":
+				return <ForgotPasswordPage />;
+			case "/reset-password":
+				return <ResetPasswordPage />;
+			case "/verify":
+				return <VerificationCard />;
+			case "/verification-complete":
+				return <VerificationComplete />;
+			case "/logging":
+				return <OAuthSuccess />;
+			case "/":
+				return (
+					<div className="flex justify-end w-screen">
+						<UserCard />
+					</div>
+				);
+			default:
+				return <div>404 Not Found</div>;
 		}
 	};
 
 	return (
 		<AuthProvider>
-			<LoginHandler>
-				{showLoginPage()}
-				{showRegister()}
-				{showLoginStatus()}
-				{showResetPassword()}
-				{showForgotPassword()}
-				{showUserCard()}
-				{showVerificationCard()}
-				{showVerificationAcceptCard()}
-				{showLogging()}
-			</LoginHandler>
+			<LoginHandler>{renderComponent()}</LoginHandler>
 		</AuthProvider>
 	);
 }
