@@ -14,6 +14,8 @@ import {
 	ResetPasswordPage,
 } from "./index";
 import "./index.css";
+import UserProfileCard from "./components/auth/UserProfileCard";
+import UserProfilePage from "./pages/UserProfilePage";
 
 function App() {
 	const renderComponent = () => {
@@ -36,6 +38,8 @@ function App() {
 				return <VerificationComplete />;
 			case "/logging":
 				return <OAuthSuccess />;
+			case "/profile":
+				return <UserProfilePage />;
 			case "/":
 				return (
 					<div className="flex justify-end w-screen">
