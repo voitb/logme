@@ -19,23 +19,16 @@ class AppwriteAuthProvider implements AuthProvider {
 	private isLoadingUser: boolean = false;
 
 	public async initialize() {
-		const sessionCookie = Cookies.get("auth_session");
 		if (this.isLoadingUser) return;
 
 		this.isLoadingUser = true;
-		if (sessionCookie) {
-			try {
-				const currentUser = await account.get();
-				await this.setUserFromAccount(currentUser);
-			} catch (error) {
-				console.error("Failed to fetch user from Appwrite:", error);
-				this.clearAuthState();
-			} finally {
-				this.isLoadingUser = false;
-				this.isInitialized = true;
-				this.notifyListeners();
-			}
-		} else {
+		try {
+			const currentUser = await account.get();
+			await this.setUserFromAccount(currentUser);
+		} catch (error) {
+			console.error("Failed to fetch user from Appwrite:", error);
+			this.clearAuthState();
+		} finally {
 			this.isLoadingUser = false;
 			this.isInitialized = true;
 			this.notifyListeners();
@@ -45,7 +38,6 @@ class AppwriteAuthProvider implements AuthProvider {
 	private clearAuthState() {
 		this.user = null;
 		this.isLoggedIn = false;
-		Cookies.remove("auth_session");
 		this.notifyListeners();
 	}
 
@@ -61,7 +53,6 @@ class AppwriteAuthProvider implements AuthProvider {
 	private async setUserFromAccount(user: AppwriteRawUser) {
 		this.user = this.convertUser(user);
 		this.isLoggedIn = true;
-		Cookies.set("auth_session", "active", { expires: 7 }); // Set the cookie
 		this.notifyListeners();
 	}
 
