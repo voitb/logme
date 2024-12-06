@@ -3,6 +3,8 @@ import AuthCard from "@/components/auth/AuthCard";
 import RegisterForm from "@/components/auth/RegisterForm";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "../lib/utils";
+import { useAuth } from "../hooks/useAuth";
 
 interface Props {
 	title?: string;
@@ -10,6 +12,7 @@ interface Props {
 }
 
 const RegisterPage = (props: Props) => {
+	const { loading } = useAuth();
 	const { title, description } = props;
 
 	return (
@@ -25,11 +28,16 @@ const RegisterPage = (props: Props) => {
 						<span className="px-2 text-sm text-gray-500">or</span>
 						<Separator className="!flex-shrink" />
 					</div>
-					<SocialLoginButtons />
+					<SocialLoginButtons type={"register"} />
 					<div className="flex justify-center">
 						<span className="px-2 text-sm text-gray-500">
 							Already have an account?{" "}
-							<a className="text-blue-400" href="/login">
+							<a
+								className={cn("text-sm text-blue-500 hover:underline", {
+									"pointer-events-none opacity-50": !!loading,
+								})}
+								href="/login"
+							>
 								Log in
 							</a>
 						</span>

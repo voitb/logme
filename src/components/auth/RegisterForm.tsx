@@ -13,17 +13,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "../../hooks/use-toast";
+import ButtonLoader from "../utils/ButtonLoader";
 
 const RegisterForm = () => {
-	const { register } = useAuth();
+	const { register, loading, setLoading } = useAuth();
 	const form = useForm<RegisterFormData>({
 		resolver: zodResolver(registerSchema),
 	});
 
 	const onSubmit = async (data: RegisterFormData) => {
 		try {
+			setLoading("manual");
 			await register(data.email, data.password, data.username);
 		} catch (err) {
+			setLoading(null);
 			const description = (err as any).message as string;
 			toast({ title: "Register error", description });
 			form.setError("root", {
@@ -43,6 +46,7 @@ const RegisterForm = () => {
 				<FormField
 					name="username"
 					control={form.control}
+					disabled={!!loading}
 					render={({ field }) => (
 						<FormItem className="mb-6">
 							<FormLabel>Username</FormLabel>
@@ -60,6 +64,7 @@ const RegisterForm = () => {
 				<FormField
 					name="email"
 					control={form.control}
+					disabled={!!loading}
 					render={({ field }) => (
 						<FormItem className="mb-6">
 							<FormLabel>Email</FormLabel>
@@ -77,6 +82,7 @@ const RegisterForm = () => {
 				<FormField
 					name="password"
 					control={form.control}
+					disabled={!!loading}
 					render={({ field }) => (
 						<FormItem className="mb-6">
 							<FormLabel>Password</FormLabel>
@@ -95,6 +101,7 @@ const RegisterForm = () => {
 				<FormField
 					name="confirmPassword"
 					control={form.control}
+					disabled={!!loading}
 					render={({ field }) => (
 						<FormItem className="mb-6">
 							<FormLabel>Confirm Password</FormLabel>
@@ -110,8 +117,8 @@ const RegisterForm = () => {
 						</FormItem>
 					)}
 				/>
-				<Button type="submit" className="w-full !mt-4">
-					Register
+				<Button disabled={!!loading} type="submit" className="w-full !mt-4">
+					<ButtonLoader loading={loading === "manual"}>Register</ButtonLoader>
 				</Button>
 			</form>
 		</Form>

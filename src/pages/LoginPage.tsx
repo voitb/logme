@@ -3,6 +3,8 @@ import AuthCard from "@/components/auth/AuthCard";
 import LoginForm from "@/components/auth/LoginForm";
 import LoginWrapper from "@/components/layout/LoginWrapper";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
+import { cn } from "../lib/utils";
+import { useAuth } from "../hooks/useAuth";
 
 interface Props {
 	title?: string;
@@ -10,6 +12,7 @@ interface Props {
 }
 
 const LoginPage = (props: Props) => {
+	const { loading } = useAuth();
 	const { title, description } = props;
 
 	return (
@@ -31,7 +34,12 @@ const LoginPage = (props: Props) => {
 					<div className="flex justify-center">
 						<span className="px-2 text-sm text-gray-500">
 							Don't have an account?{" "}
-							<a className="text-blue-400" href="/register">
+							<a
+								className={cn("text-sm text-blue-500 hover:underline", {
+									"pointer-events-none opacity-50": !!loading,
+								})}
+								href="/register"
+							>
 								Register
 							</a>
 						</span>

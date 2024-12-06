@@ -14,7 +14,6 @@ import {
 	ResetPasswordPage,
 } from "./index";
 import "./index.css";
-import UserProfileCard from "./components/auth/UserProfileCard";
 import UserProfilePage from "./pages/UserProfilePage";
 
 function App() {

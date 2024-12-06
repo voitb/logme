@@ -1,5 +1,3 @@
-// src/react/components/LoginForm.tsx
-import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LoginFormData, loginSchema } from "@/schemas/authSchemas";
@@ -14,9 +12,11 @@ import {
 } from "../ui/form";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import ButtonLoader from "../utils/ButtonLoader";
+import { cn } from "../../lib/utils";
 
 const LoginForm = () => {
-	const { login } = useAuth();
+	const { login, loading, setLoading } = useAuth();
 	const form = useForm<LoginFormData>({
 		resolver: zodResolver(loginSchema),
 	});
@@ -24,8 +24,10 @@ const LoginForm = () => {
 	const onSubmit = async (data: LoginFormData) => {
 		try {
 			console.log("submit");
+			setLoading("manual");
 			await login(data.email, data.password);
 		} catch (err) {
+			setLoading(null);
 			console.log("submit");
 			console.error(err);
 			form.setError("root", {
@@ -44,6 +46,7 @@ const LoginForm = () => {
 				)}
 				<FormField
 					name="email"
+					disabled={!!loading}
 					control={form.control}
 					render={({ field }) => (
 						<FormItem>
@@ -62,6 +65,7 @@ const LoginForm = () => {
 				<FormField
 					name="password"
 					control={form.control}
+					disabled={!!loading}
 					render={({ field }) => (
 						<FormItem>
 							<FormLabel>Password</FormLabel>
@@ -79,7 +83,9 @@ const LoginForm = () => {
 							<div className="flex justify-end">
 								<a
 									href="/forgot-password"
-									className="text-sm text-blue-500 hover:underline"
+									className={cn("text-sm text-blue-500 hover:underline", {
+										"pointer-events-none opacity-50": !!loading,
+									})}
 								>
 									Forgot Password?
 								</a>
@@ -88,8 +94,8 @@ const LoginForm = () => {
 					)}
 				/>
 
-				<Button type="submit" className="w-full !mt-10">
-					Log in
+				<Button disabled={!!loading} type="submit" className="w-full !mt-10">
+					<ButtonLoader loading={loading === "manual"}>Log in</ButtonLoader>
 				</Button>
 			</form>
 		</Form>

@@ -7,6 +7,7 @@ import {
 } from "@/types";
 import { AuthProviderFactory } from "../core/AuthProviderFactory";
 import { useAuthMethods } from "../hooks/useAuthMethods";
+import { OAuthProvider } from "appwrite";
 
 interface AuthProviderProps {
 	children: React.ReactNode;
@@ -27,6 +28,8 @@ interface AuthProviderProps {
 		navigate?: (path: string) => void;
 	};
 }
+
+export type LoadingTypes = "manual" | OAuthProvider | null;
 
 export interface AuthContextType {
 	user: User | null;
@@ -54,6 +57,8 @@ export interface AuthContextType {
 	fetchLoggedUser: () => Promise<void>;
 	isLoadingUser: boolean;
 	navigate?: (path: string) => void;
+	loading: LoadingTypes;
+	setLoading: (value: LoadingTypes) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -68,6 +73,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 	const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 	const [isInitialized, setIsInitialized] = useState<boolean>(false);
 	const [isLoadingUser, setIsLoadingUser] = useState<boolean>(false);
+	const [loading, setLoading] = useState<LoadingTypes>(null);
 
 	const authManager = useMemo(() => {
 		let authProvider: AuthProviderInterface;
@@ -243,6 +249,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 				isLoadingUser,
 				sendResetPassword,
 				navigate: methods.navigate,
+				loading,
+				setLoading,
 			}}
 		>
 			{children}

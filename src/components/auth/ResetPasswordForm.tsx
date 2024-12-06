@@ -18,9 +18,6 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import useNavigationHandler from "../../hooks/useNavigationHandler";
-// If you're using a router like React Router or Next.js, uncomment the appropriate import
-// import { useNavigate } from "react-router-dom";
-// import { useRouter } from "next/router";
 
 const ResetPasswordForm = () => {
 	const { sendResetPassword } = useAuth();
