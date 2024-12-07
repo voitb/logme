@@ -180,26 +180,27 @@ class AppwriteAuthProvider implements AuthProvider {
 	}
 
 	async updateProfile(profileDetails: ProfileDetails): Promise<void> {
-		// Update username if provided
-		// if (profileDetails.username) {
-		//   await account.updateName(profileDetails.username as string);
-		// }
+		if (profileDetails.username) {
+			await account.updateName(profileDetails.username as string);
+		}
+		if (profileDetails.email) {
+			console.log(profileDetails);
+			await account.updateEmail(
+				profileDetails.email,
+				profileDetails.currentPassword
+			);
+		}
+		if (profileDetails.password) {
+			await account.updatePassword(profileDetails.password);
+		}
 
-		// // Update email if provided
-		// firstly check if user gave good password
-		// if (profileDetails.email) {
-		//   await account.updateEmail(profileDetails.email);
-		// }
+		if (profileDetails.avatar) {
+			await this.updateAvatar(profileDetails.avatar);
+		}
 
-		// // Update password if provided
-		// if (profileDetails.password) {
-		//   await account.updatePassword(profileDetails.password);
-		// }
-
-		// // If we have preferences to update, call updatePrefs here
-		// if (profileDetails.prefs) {
-		//   await account.updatePrefs(profileDetails.prefs);
-		// }
+		if (profileDetails.prefs) {
+			await this.updatePrefs(profileDetails.prefs);
+		}
 
 		await this.fetchLoggedUser();
 	}

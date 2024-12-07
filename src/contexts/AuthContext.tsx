@@ -6,7 +6,7 @@ import {
 	AuthProvider as AuthProviderInterface,
 } from "@/types";
 import { AuthProviderFactory } from "../core/AuthProviderFactory";
-import { useAuthMethods } from "../hooks/useAuthMethods";
+// import { useAuthMethods } from "../hooks/useAuthMethods";
 import { OAuthProvider } from "appwrite";
 
 interface AuthProviderProps {
@@ -93,19 +93,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 		return new AuthManager(authProvider);
 	}, [provider, customProvider]);
 
-	const {
-		onLoginSuccess,
-		onLoginError,
-		onRegisterSuccess,
-		onRegisterError,
-		onLogout,
-		onResetPasswordSuccess,
-		onResetPasswordError,
-		onUpdateProfileSuccess,
-		onUpdateProfileError,
-		onSendEmailVerificationSuccess,
-		onSendEmailVerificationError,
-	} = useAuthMethods(methods);
+	// const {
+	// 	onLoginSuccess,
+	// 	onLoginError,
+	// 	onRegisterSuccess,
+	// 	onRegisterError,
+	// 	onLogout,
+	// 	onResetPasswordSuccess,
+	// 	onResetPasswordError,
+	// 	onUpdateProfileSuccess,
+	// 	onUpdateProfileError,
+	// 	onSendEmailVerificationSuccess,
+	// 	onSendEmailVerificationError,
+	// } = useAuthMethods(methods);
 
 	useEffect(() => {
 		if (!authManager) return;
@@ -134,14 +134,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 	}, [authManager]);
 
 	const login = async (email: string, password: string) => {
-		try {
-			await authManager.login(email, password);
-			const user = authManager.getUser()!;
-			onLoginSuccess && onLoginSuccess(user);
-		} catch (error) {
-			onLoginError && onLoginError(error as Error);
-			throw error;
-		}
+		await authManager.login(email, password);
+		// const user = authManager.getUser()!;
 	};
 
 	const register = async (
@@ -149,28 +143,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 		password: string,
 		username?: string
 	) => {
-		try {
-			await authManager.register({ email, password, username });
-			onRegisterSuccess && onRegisterSuccess();
-		} catch (error) {
-			onRegisterError && onRegisterError(error as Error);
-			throw error;
-		}
+		await authManager.register({ email, password, username });
 	};
 
 	const logout = async () => {
 		await authManager.logout();
-		onLogout && onLogout();
 	};
 
 	const forgotPassword = async (email: string) => {
-		try {
-			await authManager.forgotPassword(email);
-			// Handle success if needed
-		} catch (error) {
-			// Handle error if needed
-			throw error;
-		}
+		await authManager.forgotPassword(email);
 	};
 
 	const sendResetPassword = async (
@@ -178,34 +159,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 		secret: string,
 		newPassword: string
 	) => {
-		try {
-			await authManager.sendResetPassword(userId, secret, newPassword);
-			// Handle success if needed
-		} catch (error) {
-			// Handle error if needed
-			throw error;
-		}
-	};
-
-	const updateProfile = async (profileDetails: ProfileDetails) => {
-		try {
-			await authManager.updateProfile(profileDetails);
-			onUpdateProfileSuccess && onUpdateProfileSuccess();
-		} catch (error) {
-			onUpdateProfileError && onUpdateProfileError(error as Error);
-			throw error;
-		}
+		await authManager.sendResetPassword(userId, secret, newPassword);
 	};
 
 	const sendEmailVerification = async () => {
-		try {
-			await authManager.sendEmailVerification();
-			onSendEmailVerificationSuccess && onSendEmailVerificationSuccess();
-		} catch (error) {
-			onSendEmailVerificationError &&
-				onSendEmailVerificationError(error as Error);
-			throw error;
-		}
+		await authManager.sendEmailVerification();
 	};
 
 	const getIsEmailVerified = async (): Promise<boolean> => {
@@ -213,13 +171,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 	};
 
 	const sendVerifyEmail = async (userId: string, secret: string) => {
-		try {
-			await authManager.sendConfirmVerification(userId, secret);
-			// Handle success if needed
-		} catch (error) {
-			// Handle error if needed
-			throw error;
-		}
+		await authManager.sendConfirmVerification(userId, secret);
 	};
 
 	const setSession = async (userId: string, secret: string) => {
@@ -232,6 +184,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 
 	const updateAvatar = async (avatar: File) => {
 		await authManager.updateAvatar(avatar);
+	};
+
+	const updateProfile = async (profileDetails: ProfileDetails) => {
+		await authManager.updateProfile(profileDetails);
 	};
 
 	return (

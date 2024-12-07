@@ -54,12 +54,11 @@ const UserProfileCard: React.FC = ({
 		...defaultUpdateAllowance,
 		...updateAllowance,
 	};
-	const { user, updateAvatar, loading, setLoading } = useAuth();
+	const { user, updateProfile, loading, setLoading } = useAuth();
 	const navigate = useNavigationHandler();
 
-	const [updated, setUpdated] = useState<{ email: boolean; avatar: boolean }>({
+	const [updated, setUpdated] = useState<{ email: boolean }>({
 		email: false,
-		avatar: false,
 	});
 
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -92,7 +91,7 @@ const UserProfileCard: React.FC = ({
 			!dirtyFields.username &&
 			!dirtyFields.email &&
 			!dirtyFields.newPassword &&
-			!updated.avatar
+			!dirtyFields.avatar
 		);
 	})();
 
@@ -105,9 +104,13 @@ const UserProfileCard: React.FC = ({
 			return;
 		}
 		setLoading("manual");
-		if (data.avatar) {
-			await updateAvatar(data.avatar);
-		}
+		await updateProfile({
+			username: dirtyFields.username ? data.username : undefined,
+			email: dirtyFields.email ? data.email : undefined,
+			currentPassword: dirtyFields.email ? data.currentPassword : undefined,
+			password: dirtyFields.newPassword ? data.newPassword : undefined,
+			avatar: dirtyFields.avatar ? data.avatar : undefined,
+		});
 		setLoading(null);
 	};
 
@@ -122,56 +125,69 @@ const UserProfileCard: React.FC = ({
 	return (
 		<Form {...form}>
 			<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-7">
-				<FormItem className="mt-1">
-					<FormControl>
-						<div className="flex items-center justify-center space-x-4">
-							<div className="relative group">
-								<Avatar
-									className={cn("w-20 h-20", {
-										"cursor-pointer": finalUpdateAllowance.avatar,
-									})}
-									onClick={handleAvatarClick}
-								>
-									<AvatarImage src={watch("avatarPreview")} alt="User Avatar" />
-									<AvatarFallback>
-										{watch("username")?.charAt(0).toUpperCase() || "U"}
-									</AvatarFallback>
-								</Avatar>
-								{finalUpdateAllowance.avatar && (
-									<div
-										className={cn(
-											"absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity",
-											"rounded-full",
-											"pointer-events-none"
+				<FormField
+					name="avatar"
+					control={form.control}
+					render={({ field }) => {
+						return (
+							<FormItem className="mt-1">
+								<FormControl>
+									<div className="flex items-center justify-center space-x-4">
+										<div className="relative group">
+											<Avatar
+												className={cn("w-20 h-20", {
+													"cursor-pointer": finalUpdateAllowance.avatar,
+												})}
+												onClick={handleAvatarClick}
+											>
+												<AvatarImage
+													src={watch("avatarPreview")}
+													alt="User Avatar"
+												/>
+												<AvatarFallback>
+													{watch("username")?.charAt(0).toUpperCase() || "U"}
+												</AvatarFallback>
+											</Avatar>
+											{finalUpdateAllowance.avatar && (
+												<div
+													className={cn(
+														"absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity",
+														"rounded-full",
+														"pointer-events-none"
+													)}
+												>
+													<FaPencilAlt className="w-5 h-5" />
+												</div>
+											)}
+										</div>
+										{finalUpdateAllowance.avatar && (
+											<input
+												type="file"
+												accept="image/*"
+												ref={fileInputRef}
+												className="hidden"
+												onChange={(e) => {
+													const file = e.target.files?.[0];
+													if (file) {
+														field.onChange(file);
+														const reader = new FileReader();
+														reader.onloadend = () => {
+															form.setValue(
+																"avatarPreview",
+																reader.result as string
+															);
+														};
+														reader.readAsDataURL(file);
+													}
+												}}
+											/>
 										)}
-									>
-										<FaPencilAlt className="w-5 h-5" />
 									</div>
-								)}
-							</div>
-							{finalUpdateAllowance.avatar && (
-								<input
-									type="file"
-									accept="image/*"
-									ref={fileInputRef}
-									className="hidden"
-									onChange={(e) => {
-										const file = e.target.files?.[0];
-										if (file) {
-											form.setValue("avatar", file);
-											const reader = new FileReader();
-											reader.onloadend = () => {
-												setUpdated((prev) => ({ ...prev, avatar: true }));
-												form.setValue("avatarPreview", reader.result as string);
-											};
-											reader.readAsDataURL(file);
-										}
-									}}
-								/>
-							)}
-						</div>
-					</FormControl>
-				</FormItem>
+								</FormControl>
+							</FormItem>
+						);
+					}}
+				></FormField>
 
 				<FormField
 					name="email"
