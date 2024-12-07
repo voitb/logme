@@ -54,6 +54,6 @@ export interface ProfileDetails {
 	password?: string;
 	username?: string;
 	avatar?: File;
-	currentPassword: string;
+	currentPassword?: string;
 	[key: string]: unknown;
 }

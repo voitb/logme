@@ -7,12 +7,10 @@ import LoginWrapper from "../layout/LoginWrapper";
 const VerificationCard = () => {
 	const { user, sendEmailVerification } = useAuth();
 	const [isSending, setIsSending] = useState(false);
-	const [sentOnce, setSentOnce] = useState(false);
 	const [lastSendTime, setLastSendTime] = useState<number | null>(null);
 
 	const handleSendVerification = async () => {
 		const now = Date.now();
-		// Check if lastSendTime was set and if 10 seconds have passed
 		if (lastSendTime && now - lastSendTime < 10000) {
 			toast({
 				title: "Too Soon",
@@ -31,7 +29,6 @@ const VerificationCard = () => {
 				description: "Please check your inbox to verify your email.",
 				type: "foreground",
 			});
-			setSentOnce(true);
 			setLastSendTime(Date.now());
 		} catch {
 			toast({
@@ -65,7 +62,7 @@ const VerificationCard = () => {
 				>
 					{isSending
 						? "Sending..."
-						: sentOnce
+						: lastSendTime
 						? "Resend Verification Email"
 						: "Send Verification Email"}
 				</Button>
