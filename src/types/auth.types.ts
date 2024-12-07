@@ -40,6 +40,7 @@ export interface AuthProvider {
 	setSession(userId: string, secret: string): Promise<void>;
 	fetchLoggedUser(): Promise<void>;
 	getIsLoading(): boolean;
+	updateAvatar(avatar: File): Promise<void>;
 }
 
 export interface RegisterDetails {

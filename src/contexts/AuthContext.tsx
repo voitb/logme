@@ -59,6 +59,7 @@ export interface AuthContextType {
 	navigate?: (path: string) => void;
 	loading: LoadingTypes;
 	setLoading: (value: LoadingTypes) => void;
+	updateAvatar(avatar: File): Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -229,6 +230,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 		await authManager.fetchLoggedUser();
 	};
 
+	const updateAvatar = async (avatar: File) => {
+		await authManager.updateAvatar(avatar);
+	};
+
 	return (
 		<AuthContext.Provider
 			value={{
@@ -251,6 +256,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 				navigate: methods.navigate,
 				loading,
 				setLoading,
+				updateAvatar,
 			}}
 		>
 			{children}

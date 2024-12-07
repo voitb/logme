@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { UserProfileCardUpdates } from "../components/auth/UserProfileCard";
 
 export const loginSchema = z.object({
 	username: z.optional(z.string()),
@@ -41,48 +42,71 @@ export const resetPasswordSchema = z
 		path: ["confirmPassword"],
 	});
 
-export const userProfileSchema = z
-	.object({
-		username: z.string().min(1, "Username is required."),
-		email: z.string().email("Invalid email address."),
-		currentPassword: z
-			.string()
-			.min(8, "Password must be at least 8 characters long.")
-			.optional(),
-		newPassword: z
-			.string()
-			.min(8, "Password must be at least 8 characters long.")
-			.optional(),
-		confirmNewPassword: z.string().optional(),
-		avatar: z.instanceof(File).optional(),
-		avatarPreview: z.string().optional(),
-	})
-	.refine(
-		(data) => {
-			if (data.newPassword || data.confirmNewPassword) {
-				return data.newPassword === data.confirmNewPassword;
-			}
-			return true;
-		},
-		{
-			message: "Passwords do not match.",
-			path: ["confirmNewPassword"],
-		}
-	)
-	.refine(
-		(data) => {
-			if (data.newPassword) {
-				return !!data.currentPassword;
-			}
-			return true;
-		},
-		{
-			message: "Current password is required to set a new password.",
-			path: ["currentPassword"],
-		}
-	);
+const checkIsUpdatePossible = <U extends Record<string, boolean>>(
+	updateAllowance: U
+) => {
+	return function <T extends z.ZodTypeAny, K extends keyof U>(
+		schema: T,
+		key: K
+	): z.ZodTypeAny {
+		return updateAllowance[key] ? schema : schema.optional();
+	};
+};
 
-export type UserProfileFormData = z.infer<typeof userProfileSchema>;
+export const getUserProfileSchema = (
+	updateAllowance: UserProfileCardUpdates,
+	updatedEmail: boolean
+) => {
+	const check = checkIsUpdatePossible<UserProfileCardUpdates>(updateAllowance);
+
+	return z
+		.object({
+			username: check(z.string().min(1, "Username is required."), "username"),
+			email: check(z.string().email("Invalid email address."), "email"),
+			currentPassword: check(z.string().optional(), "email"),
+			newPassword: check(
+				z
+					.string()
+					.transform((val) => (val === "" ? undefined : val))
+					.optional()
+					.refine((val) => val === undefined || val.length >= 8, {
+						message: "Password must be at least 8 characters long.",
+					}),
+				"password"
+			),
+			confirmNewPassword: check(z.string().optional(), "password"),
+			avatar: check(z.instanceof(File).optional(), "avatar"),
+			avatarPreview: z.string().optional(),
+		})
+		.refine(
+			(data) => {
+				if (data.newPassword || data.confirmNewPassword) {
+					return data.newPassword === data.confirmNewPassword;
+				}
+				return true;
+			},
+			{
+				message: "Passwords do not match.",
+				path: ["confirmNewPassword"],
+			}
+		)
+		.refine(
+			(data) => {
+				if (updateAllowance.email && updatedEmail) {
+					return !!data.currentPassword;
+				}
+				return true;
+			},
+			{
+				message: "Current password is required to set a new password.",
+				path: ["currentPassword"],
+			}
+		);
+};
+
+export type UserProfileFormData = z.infer<
+	ReturnType<typeof getUserProfileSchema>
+>;
 export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 export type RegisterFormData = z.infer<typeof registerSchema>;

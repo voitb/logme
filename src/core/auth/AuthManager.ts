@@ -54,6 +54,10 @@ class AuthManager {
 		return this.authProvider.forgotPassword(email);
 	}
 
+	public async updateAvatar(avatar: File): Promise<void> {
+		return this.authProvider.updateAvatar(avatar);
+	}
+
 	public async sendResetPassword(
 		userId: string,
 		secret: string,

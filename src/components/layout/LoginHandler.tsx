@@ -20,7 +20,12 @@ const LoginHandler = ({ children }: LoginHandlerProps) => {
 
 	const verificationPaths = ["/verify", "/verification-complete", "/logging"];
 
-	if (!isInitialized) {
+	if (
+		!isInitialized ||
+		(isLoggedIn &&
+			!user &&
+			verificationPaths.includes(window.location.pathname))
+	) {
 		return (
 			<div className="h-screen w-screen flex items-center justify-center p-4">
 				<Loader className="w-8 h-8 animate-spin text-gray-500 dark:text-gray-400" />

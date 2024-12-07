@@ -1,7 +1,7 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { userProfileSchema } from "@/schemas/authSchemas";
+import { getUserProfileSchema } from "@/schemas/authSchemas";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,41 +13,111 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { cn } from "@/lib/utils";
+import { useAuth } from "../../hooks/useAuth";
+import useNavigationHandler from "../../hooks/useNavigationHandler";
+import ButtonLoader from "../utils/ButtonLoader";
 import { FaPencilAlt } from "react-icons/fa";
+import { cn } from "../../lib/utils";
+
+export type UserProfileCardUpdates = {
+	username?: boolean;
+	email?: boolean;
+	password?: boolean;
+	avatar?: boolean;
+};
+
+interface UserProfileCardProps {
+	updateAllowance?: UserProfileCardUpdates;
+}
 
 interface UserProfileFormData {
-	username: string;
-	email: string;
+	username?: string;
+	email?: string;
 	currentPassword: string;
-	newPassword: string;
-	confirmNewPassword: string;
+	newPassword?: string;
+	confirmNewPassword?: string;
 	avatar?: File;
 	avatarPreview?: string;
 }
 
-const UserProfileCard: React.FC = () => {
+const defaultUpdateAllowance: Required<UserProfileCardUpdates> = {
+	username: true,
+	email: true,
+	password: true,
+	avatar: true,
+};
+
+const UserProfileCard: React.FC = ({
+	updateAllowance,
+}: UserProfileCardProps) => {
+	const finalUpdateAllowance = {
+		...defaultUpdateAllowance,
+		...updateAllowance,
+	};
+	const { user, updateAvatar, loading, setLoading } = useAuth();
+	const navigate = useNavigationHandler();
+
+	const [updated, setUpdated] = useState<{ email: boolean; avatar: boolean }>({
+		email: false,
+		avatar: false,
+	});
+
+	const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+	const userProfileSchema = getUserProfileSchema(
+		finalUpdateAllowance,
+		updated.email
+	);
+
 	const form = useForm<UserProfileFormData>({
 		resolver: zodResolver(userProfileSchema),
 		defaultValues: {
-			username: "",
-			email: "",
+			avatar: undefined,
+			avatarPreview: user?.avatar || undefined,
+			username: user?.username || "",
+			email: user?.email || "",
 			currentPassword: "",
 			newPassword: "",
 			confirmNewPassword: "",
 		},
 	});
 
-	const fileInputRef = useRef<HTMLInputElement | null>(null);
+	const {
+		watch,
+		formState: { dirtyFields },
+	} = form;
+
+	const checkHasAnythingChanged = (() => {
+		return (
+			!dirtyFields.username &&
+			!dirtyFields.email &&
+			!dirtyFields.newPassword &&
+			!updated.avatar
+		);
+	})();
 
 	const handleAvatarClick = () => {
 		fileInputRef.current?.click();
 	};
 
 	const onSubmit = async (data: UserProfileFormData) => {
-		console.log(data);
-		// Implement the logic to update user information
+		if (checkHasAnythingChanged) {
+			return;
+		}
+		setLoading("manual");
+		if (data.avatar) {
+			await updateAvatar(data.avatar);
+		}
+		setLoading(null);
 	};
+
+	const handleOnCancel = async () => {
+		navigate("/");
+	};
+
+	useEffect(() => {
+		setUpdated((prev) => ({ ...prev, email: !!dirtyFields.email }));
+	}, [dirtyFields.email]);
 
 	return (
 		<Form {...form}>
@@ -57,57 +127,84 @@ const UserProfileCard: React.FC = () => {
 						<div className="flex items-center justify-center space-x-4">
 							<div className="relative group">
 								<Avatar
-									className="w-20 h-20 cursor-pointer"
+									className={cn("w-20 h-20", {
+										"cursor-pointer": finalUpdateAllowance.avatar,
+									})}
 									onClick={handleAvatarClick}
 								>
-									<AvatarImage
-										src={form.watch("avatarPreview") || "/default-avatar.png"}
-										alt="User Avatar"
-									/>
+									<AvatarImage src={watch("avatarPreview")} alt="User Avatar" />
 									<AvatarFallback>
-										{form.watch("username")?.charAt(0).toUpperCase() || "U"}
+										{watch("username")?.charAt(0).toUpperCase() || "U"}
 									</AvatarFallback>
 								</Avatar>
-								<div
-									className={cn(
-										"absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity",
-										"rounded-full"
-									)}
-								>
-									<FaPencilAlt className="w-5 h-5" />
-								</div>
+								{finalUpdateAllowance.avatar && (
+									<div
+										className={cn(
+											"absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity",
+											"rounded-full",
+											"pointer-events-none"
+										)}
+									>
+										<FaPencilAlt className="w-5 h-5" />
+									</div>
+								)}
 							</div>
-							<input
-								type="file"
-								accept="image/*"
-								ref={fileInputRef}
-								className="hidden"
-								onChange={(e) => {
-									const file = e.target.files?.[0];
-									if (file) {
-										form.setValue("avatar", file);
-										const reader = new FileReader();
-										reader.onloadend = () => {
-											form.setValue("avatarPreview", reader.result as string);
-										};
-										reader.readAsDataURL(file);
-									}
-								}}
-							/>
+							{finalUpdateAllowance.avatar && (
+								<input
+									type="file"
+									accept="image/*"
+									ref={fileInputRef}
+									className="hidden"
+									onChange={(e) => {
+										const file = e.target.files?.[0];
+										if (file) {
+											form.setValue("avatar", file);
+											const reader = new FileReader();
+											reader.onloadend = () => {
+												setUpdated((prev) => ({ ...prev, avatar: true }));
+												form.setValue("avatarPreview", reader.result as string);
+											};
+											reader.readAsDataURL(file);
+										}
+									}}
+								/>
+							)}
 						</div>
 					</FormControl>
 				</FormItem>
 
 				<FormField
-					name="username"
+					name="email"
 					control={form.control}
 					render={({ field }) => (
 						<FormItem className="relative !mt-1">
+							<FormLabel>Email</FormLabel>
+							<FormControl>
+								<Input
+									type="email"
+									placeholder="User's email"
+									className="!mt-1"
+									{...field}
+									readOnly={!finalUpdateAllowance.email}
+									disabled={!finalUpdateAllowance.email}
+								/>
+							</FormControl>
+							<FormMessage className="absolute text-[11px] !mt-1" />
+						</FormItem>
+					)}
+				/>
+
+				<FormField
+					name="username"
+					control={form.control}
+					render={({ field }) => (
+						<FormItem className="relative">
 							<FormLabel>Username</FormLabel>
 							<FormControl>
 								<Input
 									placeholder="Enter your username"
 									className="!mt-1"
+									readOnly={!finalUpdateAllowance.username}
 									{...field}
 								/>
 							</FormControl>
@@ -116,85 +213,87 @@ const UserProfileCard: React.FC = () => {
 					)}
 				/>
 
-				<FormField
-					name="email"
-					control={form.control}
-					render={({ field }) => (
-						<FormItem className="relative">
-							<FormLabel>Email</FormLabel>
-							<FormControl>
-								<Input
-									type="email"
-									placeholder="Enter your email"
-									className="!mt-1"
-									{...field}
-								/>
-							</FormControl>
-							<FormMessage className="absolute text-[11px] !mt-1" />
-						</FormItem>
-					)}
-				/>
+				{finalUpdateAllowance.password && (
+					<FormField
+						name="newPassword"
+						control={form.control}
+						render={({ field }) => (
+							<FormItem className="relative">
+								<FormLabel>New Password</FormLabel>
+								<FormControl>
+									<Input
+										type="password"
+										placeholder="Enter a new password"
+										className="!mt-1"
+										{...field}
+									/>
+								</FormControl>
+								<FormMessage className="absolute text-[11px] !mt-1" />
+							</FormItem>
+						)}
+					/>
+				)}
 
-				<FormField
-					name="currentPassword"
-					control={form.control}
-					render={({ field }) => (
-						<FormItem className="relative">
-							<FormLabel>Current Password</FormLabel>
-							<FormControl>
-								<Input
-									type="password"
-									placeholder="Enter your current password"
-									className="!mt-1"
-									{...field}
-								/>
-							</FormControl>
-							<FormMessage className="absolute text-[11px] !mt-1" />
-						</FormItem>
-					)}
-				/>
+				{finalUpdateAllowance.password && (
+					<FormField
+						name="confirmNewPassword"
+						control={form.control}
+						render={({ field }) => (
+							<FormItem className="relative">
+								<FormLabel>Confirm New Password</FormLabel>
+								<FormControl>
+									<Input
+										type="password"
+										placeholder="Confirm your new password"
+										className="!mt-1"
+										{...field}
+									/>
+								</FormControl>
+								<FormMessage className="absolute text-[11px] !mt-1" />
+							</FormItem>
+						)}
+					/>
+				)}
 
-				<FormField
-					name="newPassword"
-					control={form.control}
-					render={({ field }) => (
-						<FormItem className="relative">
-							<FormLabel>New Password</FormLabel>
-							<FormControl>
-								<Input
-									type="password"
-									placeholder="Enter a new password"
-									className="!mt-1"
-									{...field}
-								/>
-							</FormControl>
-							<FormMessage className="absolute text-[11px] !mt-1" />
-						</FormItem>
-					)}
-				/>
+				{finalUpdateAllowance.email && (
+					<FormField
+						name="currentPassword"
+						control={form.control}
+						render={({ field }) => (
+							<FormItem className="relative">
+								<FormLabel>Current Password</FormLabel>
+								<FormControl>
+									<Input
+										type="password"
+										placeholder="Enter your current password"
+										className="!mt-1"
+										{...field}
+									/>
+								</FormControl>
+								<FormMessage className="absolute text-[11px] !mt-1" />
+							</FormItem>
+						)}
+					/>
+				)}
 
-				<FormField
-					name="confirmNewPassword"
-					control={form.control}
-					render={({ field }) => (
-						<FormItem className="relative">
-							<FormLabel>Confirm New Password</FormLabel>
-							<FormControl>
-								<Input
-									type="password"
-									placeholder="Confirm your new password"
-									className="!mt-1"
-									{...field}
-								/>
-							</FormControl>
-							<FormMessage className="absolute text-[11px] !mt-1" />
-						</FormItem>
-					)}
-				/>
-
-				<Button type="submit" className="w-full !mt-10">
-					Save Changes
-				</Button>
+				<div className="flex justify-end gap-4 !mt-1">
+					<Button
+						disabled={!!loading || checkHasAnythingChanged}
+						type="submit"
+						className="w-1/2 !mt-10"
+					>
+						<ButtonLoader loading={loading === "manual"}>Save</ButtonLoader>
+					</Button>
+					<Button
+						disabled={!!loading}
+						variant="outline"
+						type="button"
+						className="w-1/2 !mt-10"
+						onClick={handleOnCancel}
+					>
+						Back
+					</Button>
+				</div>
 			</form>
 		</Form>
 	);

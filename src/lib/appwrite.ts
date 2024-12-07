@@ -1,4 +1,4 @@
-import { Client, Account, OAuthProvider } from "appwrite";
+import { Client, Account, OAuthProvider, Storage } from "appwrite";
 import { PROJECT_ID, APPWRITE_ENDPOINT } from "../config";
 export const client = new Client();
 
@@ -14,4 +14,5 @@ export const loginWithOAuth = async (provider: OAuthProvider) => {
 };
 
 export const account = new Account(client);
+export const storage = new Storage(client);
 export { ID } from "appwrite";

@@ -1,6 +1,6 @@
 // AppwriteAuthProvider.ts
 import { ID } from "appwrite";
-import { account } from "../../lib/appwrite";
+import { account, storage } from "../../lib/appwrite";
 import {
 	User,
 	AuthListener,
@@ -10,6 +10,7 @@ import {
 	AppwriteRawUser,
 } from "../../types/auth.types";
 import Cookies from "js-cookie";
+import { STORAGE_ID } from "../../config";
 
 class AppwriteAuthProvider implements AuthProvider {
 	private user: User | null = null;
@@ -47,11 +48,26 @@ class AppwriteAuthProvider implements AuthProvider {
 			email: user.email,
 			username: user.name,
 			emailVerification: user.emailVerification,
+			// We'll populate avatar later in setUserFromAccount
 		};
 	};
 
 	private async setUserFromAccount(user: AppwriteRawUser) {
-		this.user = this.convertUser(user);
+		const userObj = this.convertUser(user);
+
+		if (user.prefs && user.prefs.avatarId) {
+			try {
+				const avatarUrl = storage.getFilePreview(
+					STORAGE_ID,
+					user.prefs.avatarId
+				);
+				userObj.avatar = avatarUrl.href;
+			} catch (error) {
+				console.error("Failed to fetch avatar preview:", error);
+			}
+		}
+
+		this.user = userObj;
 		this.isLoggedIn = true;
 		this.notifyListeners();
 	}
@@ -106,6 +122,26 @@ class AppwriteAuthProvider implements AuthProvider {
 		await account.updateRecovery(userId, secret, newPassword);
 	}
 
+	async updatePrefs(prefs: { [key: string]: any }): Promise<void> {
+		await account.updatePrefs(prefs);
+		await this.fetchLoggedUser();
+	}
+
+	async updateAvatar(file: File): Promise<void> {
+		try {
+			const uploadedFile = await storage.createFile(
+				STORAGE_ID,
+				ID.unique(),
+				file
+			);
+			await account.updatePrefs({ avatarId: uploadedFile.$id });
+			await this.fetchLoggedUser();
+		} catch (error) {
+			console.error("Failed to update avatar:", error);
+			throw error;
+		}
+	}
+
 	getUser(): User | null {
 		return this.user;
 	}
@@ -144,7 +180,27 @@ class AppwriteAuthProvider implements AuthProvider {
 	}
 
 	async updateProfile(profileDetails: ProfileDetails): Promise<void> {
-		await account.updateName(profileDetails.username as string);
+		// Update username if provided
+		// if (profileDetails.username) {
+		//   await account.updateName(profileDetails.username as string);
+		// }
+
+		// // Update email if provided
+		// firstly check if user gave good password
+		// if (profileDetails.email) {
+		//   await account.updateEmail(profileDetails.email);
+		// }
+
+		// // Update password if provided
+		// if (profileDetails.password) {
+		//   await account.updatePassword(profileDetails.password);
+		// }
+
+		// // If we have preferences to update, call updatePrefs here
+		// if (profileDetails.prefs) {
+		//   await account.updatePrefs(profileDetails.prefs);
+		// }
+
 		await this.fetchLoggedUser();
 	}
 

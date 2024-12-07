@@ -23,12 +23,10 @@ const LoginForm = () => {
 
 	const onSubmit = async (data: LoginFormData) => {
 		try {
-			console.log("submit");
 			setLoading("manual");
 			await login(data.email, data.password);
 		} catch (err) {
 			setLoading(null);
-			console.log("submit");
 			console.error(err);
 			form.setError("root", {
 				message: "Failed to log in. Please check your credentials.",

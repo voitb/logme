@@ -25,6 +25,9 @@ export default defineConfig({
 		"process.env.APPWRITE_PROJECT_ID": JSON.stringify(
 			process.env.APPWRITE_PROJECT_ID
 		),
+		"process.env.APPWRITE_STORAGE_ID": JSON.stringify(
+			process.env.APPWRITE_STORAGE_ID
+		),
 		"process.env.APPWRITE_ENDPOINT": JSON.stringify(
 			process.env.APPWRITE_ENDPOINT
 		),
