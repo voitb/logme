@@ -38,7 +38,7 @@ export interface AuthProvider {
 	getIsEmailVerified(): Promise<boolean>;
 	setCookie(user: AppwriteRawUser): void;
 	setSession(userId: string, secret: string): Promise<void>;
-	fetchLoggedUser(): Promise<void>;
+	fetchLoggedUser(): Promise<Models.User<Models.Preferences> | undefined>;
 	getIsLoading(): boolean;
 	updateAvatar(avatar: File): Promise<void>;
 }

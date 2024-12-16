@@ -7,7 +7,21 @@ import {
 	AppwriteRawUser,
 } from "../../types/auth.types";
 
-class AuthManager {
+type AuthUserTypeMap = {
+	[AuthProviderType.APPWRITE]: AppwriteRawUser;
+	[AuthProviderType.CUSTOM]: any;
+	[AuthProviderType.SUPABASE]: any;
+};
+
+enum AuthProviderType {
+	APPWRITE = "appwrite",
+	CUSTOM = "custom",
+	SUPABASE = "supabase",
+}
+
+type AuthUser<T extends keyof AuthUserTypeMap> = AuthUserTypeMap[T];
+
+class AuthManager<T extends AuthProviderType = AuthProviderType.APPWRITE> {
 	private authProvider: AuthProvider;
 
 	constructor(authProvider: AuthProvider) {
@@ -93,8 +107,9 @@ class AuthManager {
 		await this.authProvider.setSession(userId, secret);
 	}
 
-	public async fetchLoggedUser(): Promise<void> {
-		await this.authProvider.fetchLoggedUser();
+	public async fetchLoggedUser(): Promise<AuthUser<T>> {
+		const user = await this.authProvider.fetchLoggedUser();
+		return user as AuthUser<T>;
 	}
 
 	public setCookie(user: AppwriteRawUser): void {

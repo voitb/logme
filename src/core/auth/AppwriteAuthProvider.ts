@@ -48,7 +48,6 @@ class AppwriteAuthProvider implements AuthProvider {
 			email: user.email,
 			username: user.name,
 			emailVerification: user.emailVerification,
-			// We'll populate avatar later in setUserFromAccount
 		};
 	};
 
@@ -76,6 +75,7 @@ class AppwriteAuthProvider implements AuthProvider {
 		try {
 			const currentUser = await account.get();
 			await this.setUserFromAccount(currentUser);
+			return currentUser;
 		} catch (error) {
 			console.error("Failed to fetch user from Appwrite:", error);
 			this.clearAuthState();
@@ -183,7 +183,7 @@ class AppwriteAuthProvider implements AuthProvider {
 		if (profileDetails.username) {
 			await account.updateName(profileDetails.username as string);
 		}
-		if (profileDetails.email) {
+		if (profileDetails.email && profileDetails.currentPassword) {
 			console.log(profileDetails);
 			await account.updateEmail(
 				profileDetails.email,

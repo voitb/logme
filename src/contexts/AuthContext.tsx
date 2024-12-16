@@ -4,6 +4,7 @@ import {
 	User,
 	ProfileDetails,
 	AuthProvider as AuthProviderInterface,
+	AppwriteRawUser,
 } from "@/types";
 import { AuthProviderFactory } from "../core/AuthProviderFactory";
 // import { useAuthMethods } from "../hooks/useAuthMethods";
@@ -30,7 +31,6 @@ interface AuthProviderProps {
 }
 
 export type LoadingTypes = "manual" | OAuthProvider | null;
-
 export interface AuthContextType {
 	user: User | null;
 	isInitialized: boolean;
@@ -54,7 +54,7 @@ export interface AuthContextType {
 	sendVerifyEmail: (userId: string, secret: string) => Promise<void>;
 	getIsEmailVerified: () => Promise<boolean>;
 	setSession(userId: string, secret: string): Promise<void>;
-	fetchLoggedUser: () => Promise<void>;
+	fetchLoggedUser: () => Promise<AppwriteRawUser>;
 	isLoadingUser: boolean;
 	navigate?: (path: string) => void;
 	loading: LoadingTypes;
@@ -179,7 +179,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 	};
 
 	const fetchLoggedUser = async () => {
-		await authManager.fetchLoggedUser();
+		const user = await authManager.fetchLoggedUser();
+		return user;
 	};
 
 	const updateAvatar = async (avatar: File) => {
