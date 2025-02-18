@@ -19,6 +19,10 @@ const LoginForm = () => {
 	const { login, loading, setLoading } = useAuth();
 	const form = useForm<LoginFormData>({
 		resolver: zodResolver(loginSchema),
+		defaultValues: {
+			email: "",
+			password: "",
+		},
 	});
 
 	const onSubmit = async (data: LoginFormData) => {
@@ -27,9 +31,10 @@ const LoginForm = () => {
 			await login(data.email, data.password);
 		} catch (err) {
 			setLoading(null);
-			console.error(err);
+			console.error(err.message);
 			form.setError("root", {
-				message: "Failed to log in. Please check your credentials.",
+				message:
+					err.message || "Failed to log in. Please check your credentials.",
 			});
 		}
 	};

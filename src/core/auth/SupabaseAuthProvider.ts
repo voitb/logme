@@ -7,7 +7,6 @@ import {
 	ProfileDetails,
 	RegisterDetails,
 } from "../../types/auth.types";
-import Cookies from "js-cookie";
 
 class SupabaseAuthProvider implements AuthProvider {
 	private user: User | null = null;
@@ -19,31 +18,23 @@ class SupabaseAuthProvider implements AuthProvider {
 	constructor() {}
 
 	public async initialize() {
-		const sessionCookie = Cookies.get("auth_session");
 		if (this.isLoadingUser) return;
 
 		this.isLoadingUser = true;
-
-		if (sessionCookie) {
-			try {
-				const {
-					data: { session },
-					error,
-				} = await supabase.auth.getSession();
-				if (error || !session || !session.user) {
-					throw error || new Error("No active session");
-				}
-				await this.setUserFromSession(session);
-			} catch (error) {
-				console.error("Failed to fetch user from Supabase:", error);
+		try {
+			const {
+				data: { session },
+				error,
+			} = await supabase.auth.getSession();
+			if (error || !session || !session.user) {
 				this.clearAuthState();
-			} finally {
-				this.isLoadingUser = false;
-				this.isInitialized = true;
-				this.notifyListeners();
+			} else {
+				await this.setUserFromSession(session);
 			}
-		} else {
-			// No session cookie exists
+		} catch (error) {
+			console.error("Failed to fetch user from Supabase:", error);
+			this.clearAuthState();
+		} finally {
 			this.isLoadingUser = false;
 			this.isInitialized = true;
 			this.notifyListeners();
@@ -53,7 +44,6 @@ class SupabaseAuthProvider implements AuthProvider {
 	private clearAuthState() {
 		this.user = null;
 		this.isLoggedIn = false;
-		Cookies.remove("auth_session");
 		this.notifyListeners();
 	}
 
@@ -63,26 +53,25 @@ class SupabaseAuthProvider implements AuthProvider {
 			email: user.email,
 			username: user.user_metadata?.username || "",
 			emailVerification: user.email_confirmed_at ? true : false,
+			avatar: user.user_metadata?.avatar_url || null,
 		};
 	};
 
 	private async setUserFromSession(session: any) {
 		this.user = this.convertUser(session.user);
 		this.isLoggedIn = true;
-		this.setCookie();
 		this.notifyListeners();
 	}
 
 	public async fetchLoggedUser() {
 		try {
-			const {
-				data: { session },
-				error,
-			} = await supabase.auth.getSession();
-			if (error || !session || !session.user) {
-				throw error || new Error("No active session");
-			}
-			await this.setUserFromSession(session);
+			const data = await supabase.auth.getSession();
+			console.log(data);
+			// if (error || !session || !session.user) {
+			// 	throw error || new Error("No active session");
+			// }
+			// await this.setUserFromSession(session);
+			// return session.user;
 		} catch (error) {
 			console.error("Failed to fetch user from Supabase:", error);
 			this.clearAuthState();
@@ -102,9 +91,10 @@ class SupabaseAuthProvider implements AuthProvider {
 
 	async register(userDetails: RegisterDetails): Promise<void> {
 		const { email, password, username } = userDetails;
+
 		const {
-			data: { user, session },
-			error,
+			data: { user },
+			error: signUpError,
 		} = await supabase.auth.signUp({
 			email,
 			password,
@@ -112,15 +102,24 @@ class SupabaseAuthProvider implements AuthProvider {
 				data: {
 					username: username || "",
 				},
+				emailRedirectTo: `${window.location.origin}/verification-complete`,
 			},
 		});
-		if (error || !user) {
-			throw error || new Error("Registration failed");
+
+		if (signUpError || !user) {
+			throw signUpError || new Error("Registration failed");
 		}
-		// Supabase may or may not create a session upon sign-up depending on your settings
-		if (session) {
-			await this.setUserFromSession(session);
-		}
+
+		this.user = {
+			id: user.id,
+			email: user.email!,
+			username: user.user_metadata?.username || "",
+			emailVerification: false,
+		};
+
+		this.notifyListeners();
+		this.fetchLoggedUser();
+		// await this.sendEmailVerification();
 	}
 
 	async logout(): Promise<void> {
@@ -154,18 +153,74 @@ class SupabaseAuthProvider implements AuthProvider {
 		}
 	}
 
-	async sendResetPassword(): // accessToken: string,
-	// secret: string,
-	// newPassword: string
-	Promise<void> {
+	async updatePrefs(prefs: { [key: string]: any }): Promise<void> {
+		const {
+			data: { user },
+			error,
+		} = await supabase.auth.updateUser({
+			data: {
+				...this.user?.prefs,
+				...prefs,
+			},
+		});
+
+		if (error) {
+			throw error;
+		}
+
+		await this.fetchLoggedUser();
+	}
+
+	async updateAvatar(file: File): Promise<void> {
+		try {
+			const fileExt = file.name.split(".").pop();
+			const fileName = `${this.user?.id}-avatar.${fileExt}`;
+			const filePath = `avatars/${fileName}`;
+
+			// Upload the file to Supabase Storage
+			const { error: uploadError } = await supabase.storage
+				.from("avatars")
+				.upload(filePath, file, { upsert: true });
+
+			if (uploadError) {
+				throw uploadError;
+			}
+
+			// Get the public URL
+			const {
+				data: { publicUrl },
+			} = supabase.storage.from("avatars").getPublicUrl(filePath);
+
+			// Update user metadata with avatar URL
+			const { error: updateError } = await supabase.auth.updateUser({
+				data: {
+					avatar_url: publicUrl,
+				},
+			});
+
+			if (updateError) {
+				throw updateError;
+			}
+
+			await this.fetchLoggedUser();
+		} catch (error) {
+			console.error("Failed to update avatar:", error);
+			throw error;
+		}
+	}
+
+	async sendResetPassword(
+		userId: string,
+		secret: string,
+		newPassword: string
+	): Promise<void> {
 		// Supabase handles password reset via email
-		// const { error } = await supabase.auth.updateUser(
-		//   { password: newPassword },
-		//   { accessToken }
-		// );
-		// if (error) {
-		//   throw error;
-		// }
+		const { error } = await supabase.auth.updateUser({
+			password: newPassword,
+		});
+		if (error) {
+			throw error;
+		}
 	}
 
 	getUser(): User | null {
@@ -198,7 +253,7 @@ class SupabaseAuthProvider implements AuthProvider {
 		);
 	}
 
-	async resetPassword(email: string): Promise<void> {
+	async forgotPassword(email: string): Promise<void> {
 		const { error } = await supabase.auth.resetPasswordForEmail(email, {
 			redirectTo: `${window.location.origin}/reset-password`,
 		});
@@ -207,28 +262,40 @@ class SupabaseAuthProvider implements AuthProvider {
 		}
 	}
 
-	async forgotPassword(email: string): Promise<void> {
-		await this.resetPassword(email);
-	}
-
 	async updateProfile(profileDetails: ProfileDetails): Promise<void> {
-		const { error } = await supabase.auth.updateUser({
-			email: profileDetails.email,
-			password: profileDetails.password,
-			data: {
-				username: profileDetails.username,
-				...profileDetails,
-			},
-		});
+		const updates: any = {};
+		const metadata: any = {};
+
+		if (profileDetails.email) {
+			updates.email = profileDetails.email;
+		}
+		if (profileDetails.username) {
+			metadata.username = profileDetails.username;
+		}
+		if (profileDetails.password) {
+			updates.password = profileDetails.password;
+		}
+		if (Object.keys(metadata).length > 0) {
+			updates.data = metadata;
+		}
+
+		const { error } = await supabase.auth.updateUser(updates);
 		if (error) {
 			throw error;
 		}
+
+		if (profileDetails.avatar) {
+			await this.updateAvatar(profileDetails.avatar);
+		}
+
+		if (profileDetails.prefs) {
+			await this.updatePrefs(profileDetails.prefs);
+		}
+
 		await this.fetchLoggedUser();
 	}
 
 	async sendEmailVerification(): Promise<void> {
-		// Supabase sends email verification automatically on sign up
-		// To resend, use supabase.auth.resend()
 		const { error } = await supabase.auth.resend({
 			type: "signup",
 			email: this.user?.email as string,
@@ -238,9 +305,7 @@ class SupabaseAuthProvider implements AuthProvider {
 		}
 	}
 
-	async sendConfirmVerification(): // userId: string,
-	// secret: string
-	Promise<void> {
+	async sendConfirmVerification(userId: string, secret: string): Promise<void> {
 		// Supabase handles email verification via magic link
 		// Typically, this is handled automatically
 		// Implement any additional logic if necessary
@@ -251,9 +316,7 @@ class SupabaseAuthProvider implements AuthProvider {
 		return this.user?.emailVerification || false;
 	}
 
-	setCookie(): void {
-		Cookies.set("auth_session", "active", { expires: 7 });
-	}
+	// Remove setCookie method
 }
 
 export default SupabaseAuthProvider;

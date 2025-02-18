@@ -59,6 +59,8 @@ export interface AuthContextType {
 	navigate?: (path: string) => void;
 	loading: LoadingTypes;
 	setLoading: (value: LoadingTypes) => void;
+	showConfirmation: boolean;
+	setShowConfirmation: (value: boolean) => void;
 	updateAvatar(avatar: File): Promise<void>;
 }
 
@@ -66,7 +68,7 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({
 	children,
-	provider = "appwrite",
+	provider = "supabase",
 	customProvider,
 	methods = {},
 }) => {
@@ -75,6 +77,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 	const [isInitialized, setIsInitialized] = useState<boolean>(false);
 	const [isLoadingUser, setIsLoadingUser] = useState<boolean>(false);
 	const [loading, setLoading] = useState<LoadingTypes>(null);
+	const [showConfirmation, setShowConfirmation] = useState<boolean>(false);
 
 	const authManager = useMemo(() => {
 		let authProvider: AuthProviderInterface;
@@ -213,6 +216,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 				navigate: methods.navigate,
 				loading,
 				setLoading,
+				showConfirmation,
+				setShowConfirmation,
 				updateAvatar,
 			}}
 		>

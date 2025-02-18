@@ -16,7 +16,13 @@ import { toast } from "../../hooks/use-toast";
 import ButtonLoader from "../utils/ButtonLoader";
 
 const RegisterForm = () => {
-	const { register, loading, setLoading } = useAuth();
+	const {
+		register,
+		loading,
+		setLoading,
+		showConfirmation,
+		setShowConfirmation,
+	} = useAuth();
 	const form = useForm<RegisterFormData>({
 		resolver: zodResolver(registerSchema),
 	});
@@ -24,7 +30,15 @@ const RegisterForm = () => {
 	const onSubmit = async (data: RegisterFormData) => {
 		try {
 			setLoading("manual");
-			await register(data.email, data.password, data.username);
+			await register(data.email, data.password, data.username).then(() => {
+				setLoading(null);
+				setShowConfirmation(true);
+				form.reset();
+				toast({
+					title: "User registered",
+					description: "Please check your email.",
+				});
+			});
 		} catch (err) {
 			setLoading(null);
 			const description = (err as any).message as string;
@@ -41,6 +55,13 @@ const RegisterForm = () => {
 				{form.formState.errors.root && (
 					<div className="text-red-500 text-sm mb-2">
 						{form.formState.errors.root.message}
+					</div>
+				)}
+				{showConfirmation && (
+					<div className="text-green-500 text-sm mb-2">
+						<p className="text-center">
+							Registration confirmation has been sent. Please check your email.
+						</p>
 					</div>
 				)}
 				<FormField
